@@ -2,7 +2,7 @@
 import os
 
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, RegisterEventHandler
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, RegisterEventHandler, SetEnvironmentVariable
 from launch.event_handlers import OnProcessExit
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import Command, FindExecutable, LaunchConfiguration, PathJoinSubstitution
@@ -21,14 +21,29 @@ def generate_launch_description():
     desc_pkg = get_package_share_directory('hexapod_description')
     sim_pkg = get_package_share_directory('hexapod_simulation')
 
-    # Ensure GAZEBO_MODEL_PATH includes description meshes
-    if 'GAZEBO_MODEL_PATH' in os.environ:
-        os.environ['GAZEBO_MODEL_PATH'] += os.pathsep + os.path.join(desc_pkg, 'share')
-    else:
-        os.environ['GAZEBO_MODEL_PATH'] = os.path.join(desc_pkg, 'share')
+    # Get the parent directory (install/share) to make model:// URIs work
+    install_share_dir = os.path.dirname(desc_pkg)
+    
+    # Set Gazebo resource paths - point to the share directory containing all packages
+    gz_model_path = SetEnvironmentVariable(
+        name='GZ_SIM_RESOURCE_PATH',
+        value=install_share_dir + ':' + 
+              os.environ.get('GZ_SIM_RESOURCE_PATH', '')
+    )
+    
+    ign_model_path = SetEnvironmentVariable(
+        name='IGN_GAZEBO_RESOURCE_PATH',
+        value=install_share_dir + ':' + 
+              os.environ.get('IGN_GAZEBO_RESOURCE_PATH', '')
+    )
 
     # Robot description (xacro)
-    xacro_file = PathJoinSubstitution([FindPackageShare('hexapod_description'), 'robot','visual', 'hexapod.xacro'])
+    xacro_file = PathJoinSubstitution([
+        FindPackageShare('hexapod_description'), 
+        'robot',
+        'visual', 
+        'hexapod.xacro'
+    ])
     robot_description_content = Command([
         FindExecutable(name='xacro'), ' ', xacro_file,
         ' use_sim_time:=', use_sim_time
@@ -66,7 +81,7 @@ def generate_launch_description():
             '-topic', 'robot_description',
             '-name', 'hexapod',
             '-allow_renaming', 'true',
-            '-x', '0.0', '-y', '0.0', '-z', '0.5'
+            '-x', '0.0', '-y', '0.0', '-z', '0.1'
         ]
     )
 
@@ -94,7 +109,7 @@ def generate_launch_description():
         output='screen',
         arguments=[
             '/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock',
-            '/imu_data@sensor_msgs/msg/Imu[gz.msgs.IMU'
+            '/imu/data@sensor_msgs/msg/Imu[gz.msgs.IMU'
         ],
         parameters=[{'use_sim_time': use_sim_time}]
     )
@@ -116,6 +131,8 @@ def generate_launch_description():
             default_value='true',
             description='Use simulation (Gazebo) clock'
         ),
+        gz_model_path,
+        ign_model_path,
         gz_sim,
         state_pub,
         spawn_entity,

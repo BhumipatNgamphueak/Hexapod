@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(controller)
+project(hexapod)
 
 # Default to C99
 if(NOT CMAKE_C_STANDARD)
@@ -27,10 +27,12 @@ ament_python_install_package(${PROJECT_NAME})
 
 # Install Python executables
 install(PROGRAMS
-
-  scripts/mit_controller.py
-  scripts/pid_controller.py
-
+  scripts/forward_kinematic.py
+  scripts/gait_planning.py
+  scripts/inverse_kinematic.py
+  scripts/set_point.py
+  scripts/state_controller.py
+  scripts/trajectory_planning.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
@@ -50,6 +52,7 @@ install(TARGETS
 
 ################ INSTALL LAUNCH, ETC #################
 install(DIRECTORY
+launch
   # add directories here
   DESTINATION share/${PROJECT_NAME})
 

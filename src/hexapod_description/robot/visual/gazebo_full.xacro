@@ -1,8 +1,7 @@
 <?xml version="1.0"?>
-<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="hexapod">
 
-  <!-- ros2_control for Gazebo Sim (Ignition) -->
-  <ros2_control name="HexapodGazeboSystem" type="system">
+  <ros2_control name="GazeboSimSystem" type="system">
     <hardware>
       <plugin>gz_ros2_control/GazeboSimSystem</plugin>
     </hardware>
@@ -10,8 +9,8 @@
     <!-- LEG 1 JOINTS -->
     <joint name="hip_joint_1">
       <command_interface name="effort">
-        <param name="min">-10</param>
-        <param name="max">10</param>
+        <param name="min">-100</param>
+        <param name="max">100</param>
       </command_interface>
       <state_interface name="position">
         <param name="initial_value">0.0</param>
@@ -22,8 +21,8 @@
 
     <joint name="knee_joint_1">
       <command_interface name="effort">
-        <param name="min">-10</param>
-        <param name="max">10</param>
+        <param name="min">-100</param>
+        <param name="max">100</param>
       </command_interface>
       <state_interface name="position">
         <param name="initial_value">0.0</param>
@@ -34,8 +33,8 @@
 
     <joint name="ankle_joint_1">
       <command_interface name="effort">
-        <param name="min">-10</param>
-        <param name="max">10</param>
+        <param name="min">-100</param>
+        <param name="max">100</param>
       </command_interface>
       <state_interface name="position">
         <param name="initial_value">0.0</param>
@@ -47,8 +46,8 @@
     <!-- LEG 2 JOINTS -->
     <joint name="hip_joint_2">
       <command_interface name="effort">
-        <param name="min">-10</param>
-        <param name="max">10</param>
+        <param name="min">-100</param>
+        <param name="max">100</param>
       </command_interface>
       <state_interface name="position">
         <param name="initial_value">0.0</param>
@@ -59,8 +58,8 @@
 
     <joint name="knee_joint_2">
       <command_interface name="effort">
-        <param name="min">-10</param>
-        <param name="max">10</param>
+        <param name="min">-100</param>
+        <param name="max">100</param>
       </command_interface>
       <state_interface name="position">
         <param name="initial_value">0.0</param>
@@ -71,8 +70,8 @@
 
     <joint name="ankle_joint_2">
       <command_interface name="effort">
-        <param name="min">-10</param>
-        <param name="max">10</param>
+        <param name="min">-100</param>
+        <param name="max">100</param>
       </command_interface>
       <state_interface name="position">
         <param name="initial_value">0.0</param>
@@ -84,8 +83,8 @@
     <!-- LEG 3 JOINTS -->
     <joint name="hip_joint_3">
       <command_interface name="effort">
-        <param name="min">-10</param>
-        <param name="max">10</param>
+        <param name="min">-100</param>
+        <param name="max">100</param>
       </command_interface>
       <state_interface name="position">
         <param name="initial_value">0.0</param>
@@ -96,8 +95,8 @@
 
     <joint name="knee_joint_3">
       <command_interface name="effort">
-        <param name="min">-10</param>
-        <param name="max">10</param>
+        <param name="min">-100</param>
+        <param name="max">100</param>
       </command_interface>
       <state_interface name="position">
         <param name="initial_value">0.0</param>
@@ -108,8 +107,8 @@
 
     <joint name="ankle_joint_3">
       <command_interface name="effort">
-        <param name="min">-10</param>
-        <param name="max">10</param>
+        <param name="min">-100</param>
+        <param name="max">100</param>
       </command_interface>
       <state_interface name="position">
         <param name="initial_value">0.0</param>
@@ -121,8 +120,8 @@
     <!-- LEG 4 JOINTS -->
     <joint name="hip_joint_4">
       <command_interface name="effort">
-        <param name="min">-10</param>
-        <param name="max">10</param>
+        <param name="min">-100</param>
+        <param name="max">100</param>
       </command_interface>
       <state_interface name="position">
         <param name="initial_value">0.0</param>
@@ -133,8 +132,8 @@
 
     <joint name="knee_joint_4">
       <command_interface name="effort">
-        <param name="min">-10</param>
-        <param name="max">10</param>
+        <param name="min">-100</param>
+        <param name="max">100</param>
       </command_interface>
       <state_interface name="position">
         <param name="initial_value">0.0</param>
@@ -145,8 +144,8 @@
 
     <joint name="ankle_joint_4">
       <command_interface name="effort">
-        <param name="min">-10</param>
-        <param name="max">10</param>
+        <param name="min">-100</param>
+        <param name="max">100</param>
       </command_interface>
       <state_interface name="position">
         <param name="initial_value">0.0</param>
@@ -158,8 +157,8 @@
     <!-- LEG 5 JOINTS -->
     <joint name="hip_joint_5">
       <command_interface name="effort">
-        <param name="min">-10</param>
-        <param name="max">10</param>
+        <param name="min">-100</param>
+        <param name="max">100</param>
       </command_interface>
       <state_interface name="position">
         <param name="initial_value">0.0</param>
@@ -170,8 +169,8 @@
 
     <joint name="knee_joint_5">
       <command_interface name="effort">
-        <param name="min">-10</param>
-        <param name="max">10</param>
+        <param name="min">-100</param>
+        <param name="max">100</param>
       </command_interface>
       <state_interface name="position">
         <param name="initial_value">0.0</param>
@@ -182,8 +181,8 @@
 
     <joint name="ankle_joint_5">
       <command_interface name="effort">
-        <param name="min">-10</param>
-        <param name="max">10</param>
+        <param name="min">-100</param>
+        <param name="max">100</param>
       </command_interface>
       <state_interface name="position">
         <param name="initial_value">0.0</param>
@@ -195,8 +194,8 @@
     <!-- LEG 6 JOINTS -->
     <joint name="hip_joint_6">
       <command_interface name="effort">
-        <param name="min">-10</param>
-        <param name="max">10</param>
+        <param name="min">-100</param>
+        <param name="max">100</param>
       </command_interface>
       <state_interface name="position">
         <param name="initial_value">0.0</param>
@@ -207,8 +206,8 @@
 
     <joint name="knee_joint_6">
       <command_interface name="effort">
-        <param name="min">-10</param>
-        <param name="max">10</param>
+        <param name="min">-100</param>
+        <param name="max">100</param>
       </command_interface>
       <state_interface name="position">
         <param name="initial_value">0.0</param>
@@ -219,8 +218,8 @@
 
     <joint name="ankle_joint_6">
       <command_interface name="effort">
-        <param name="min">-10</param>
-        <param name="max">10</param>
+        <param name="min">-100</param>
+        <param name="max">100</param>
       </command_interface>
       <state_interface name="position">
         <param name="initial_value">0.0</param>
@@ -231,51 +230,30 @@
 
   </ros2_control>
 
-  <!-- Gazebo ros2_control Plugin -->
   <gazebo>
     <plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
       <parameters>$(find hexapod_simulation)/config/controller_full.yaml</parameters>
     </plugin>
+
+    <!-- Sensor Manager (for IMU, Lidar, etc.) -->
+    <plugin filename="libignition-gazebo-sensors-system.so"
+            name="ignition::gazebo::systems::Sensors">
+      <render_engine>ogre2</render_engine>
+    </plugin>
   </gazebo>
 
-  <!-- Ground Contact Plugin for all foot contacts -->
-  <xacro:macro name="foot_contact_sensor" params="leg_num">
-    <gazebo reference="foot_contact_${leg_num}">
-      <sensor name="foot_contact_sensor_${leg_num}" type="contact">
-        <contact>
-          <collision>foot_contact_${leg_num}_collision</collision>
-        </contact>
-        <always_on>true</always_on>
-        <update_rate>100</update_rate>
-      </sensor>
-      
-      <!-- Contact surface properties -->
-      <mu1>0.8</mu1>
-      <mu2>0.8</mu2>
-      <kp>1000000.0</kp>
-      <kd>100.0</kd>
-      <minDepth>0.001</minDepth>
-      <maxVel>0.01</maxVel>
-    </gazebo>
-  </xacro:macro>
-
-  <!-- Instantiate contact sensors for all 6 legs -->
-  <xacro:foot_contact_sensor leg_num="1"/>
-  <xacro:foot_contact_sensor leg_num="2"/>
-  <xacro:foot_contact_sensor leg_num="3"/>
-  <xacro:foot_contact_sensor leg_num="4"/>
-  <xacro:foot_contact_sensor leg_num="5"/>
-  <xacro:foot_contact_sensor leg_num="6"/>
-
-  <!-- IMU Sensor on Base Link -->
-  <gazebo reference="base_link">
+  <!-- Optional IMU sensor on base_link -->
+  <!-- <gazebo reference="base_link">
     <sensor name="imu_sensor" type="imu">
       <always_on>true</always_on>
-      <update_rate>100</update_rate>
+      <update_rate>100.0</update_rate>
       <visualize>true</visualize>
-      <topic>imu_data</topic>
-      <enable_metrics>false</enable_metrics>
+      <topic>/imu/data</topic>
+      <gz_frame_id>base_link</gz_frame_id>
+      <plugin filename="libignition-gazebo-imu-system.so"
+              name="ignition::gazebo::systems::Imu"/>
+      <pose>0 0 0 0 0 0</pose>
     </sensor>
-  </gazebo>
+  </gazebo> -->
 
 </robot>
