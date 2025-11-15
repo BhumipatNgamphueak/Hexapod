@@ -26,6 +26,12 @@ controller_manager:
       type: effort_controllers/JointGroupEffortController
 
 
+# Joint State Broadcaster Parameters
+joint_state_broadcaster:
+  ros__parameters:
+    use_sim_time: true
+    update_rate: 100  # Publish at 100 Hz
+
 # Leg 1 Controller
 effort_controller_leg_1:
   ros__parameters:

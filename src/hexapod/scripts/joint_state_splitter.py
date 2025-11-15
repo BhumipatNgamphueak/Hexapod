@@ -1,85 +1,140 @@
 #!/usr/bin/env python3
 """
-Joint State Splitter Node - FIXED for ROS 2 Humble
+Joint State Splitter Node - IMPLEMENTED
+Input: /joint_states (global joint states from Gazebo - 18 joints)
+Output: /hexapod/leg_{1-6}/joint_states (filtered per leg - 3 joints each)
+Frequency: Callback-based (no timer)
+
+This node splits the global joint states from Gazebo into per-leg topics.
+Each leg has 3 joints: hip, knee, ankle
 """
 
 import rclpy
 from rclpy.node import Node
+from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy
 from sensor_msgs.msg import JointState
-from typing import Dict, List
 
 
 class JointStateSplitter(Node):
     def __init__(self):
         super().__init__('joint_state_splitter')
 
-        self.leg_joint_map: Dict[int, List[str]] = {}
-        self._warned_missing: set = set()  # Track which legs have already warned
+        # Parameters: Define joint names for each leg
+        self.leg_joints = {}
+        for i in range(1, 7):
+            param_name = f'leg_{i}_joints'
+            default_value = [f'hip_joint_{i}', f'knee_joint_{i}', f'ankle_joint_{i}']
+            self.declare_parameter(param_name, default_value)
+            self.leg_joints[i] = self.get_parameter(param_name).value
 
-        for leg in range(1, 7):
-            param_name = f'leg_{leg}_joints'
-            default = [f'hip_joint_{leg}', f'knee_joint_{leg}', f'ankle_joint_{leg}']
-            self.declare_parameter(param_name, default)
-            joints = self.get_parameter(param_name).get_parameter_value().string_array_value
-            self.leg_joint_map[leg] = list(joints)
-
-            self.get_logger().info(f'Leg {leg} joints: {self.leg_joint_map[leg]}')
-
-        self.joint_state_sub = self.create_subscription(
-            JointState,
-            'joint_states',
-            self.joint_state_callback,
-            10
+        # QoS Profile to match joint_state_broadcaster
+        # Publisher uses: TRANSIENT_LOCAL + RELIABLE
+        qos = QoSProfile(
+            reliability=ReliabilityPolicy.RELIABLE,
+            durability=DurabilityPolicy.TRANSIENT_LOCAL,
+            depth=10
         )
 
-        self.leg_pubs: Dict[int, rclpy.publishing.Publisher] = {}
-        for leg in range(1, 7):
-            topic = f'leg_{leg}/joint_states'
-            self.leg_pubs[leg] = self.create_publisher(JointState, topic, 10)
+        # INPUT: Subscribe to global joint states with matching QoS
+        self.joint_state_sub = self.create_subscription(
+            JointState, '/joint_states', self.joint_state_callback, qos)
 
-        self.get_logger().info('JointStateSplitter initialized – waiting for /joint_states')
+        # OUTPUT: Publishers (one per leg)
+        self.leg_pubs = {}
+        for i in range(1, 7):
+            self.leg_pubs[i] = self.create_publisher(
+                JointState, f'leg_{i}/joint_states', 10)
 
-    def joint_state_callback(self, msg: JointState) -> None:
-        name_to_idx = {name: idx for idx, name in enumerate(msg.name)}
+        # Debug counters
+        self.input_count = 0
+        self.output_counts = {i: 0 for i in range(1, 7)}
+        self.first_message = True
 
-        for leg, wanted_names in self.leg_joint_map.items():
-            missing = [n for n in wanted_names if n not in name_to_idx]
-            if missing:
-                warn_key = f'leg_{leg}_missing'
-                if warn_key not in self._warned_missing:
-                    self.get_logger().warn(
-                        f'Leg {leg}: missing joints in /joint_states: {missing}'
-                    )
-                    self._warned_missing.add(warn_key)
-                continue
+        self.get_logger().info('Joint State Splitter initialized')
+        for i in range(1, 7):
+            self.get_logger().info(f'Leg {i} joints: {self.leg_joints[i]}')
 
+    def joint_state_callback(self, msg):
+        """
+        INPUT: Full joint states from Gazebo (18 joints)
+        OUTPUT: Split joint states to each leg (3 joints per leg)
+        """
+        self.input_count += 1
+
+        # Debug first message
+        if self.first_message:
+            self.get_logger().info(f'[DEBUG] First message: {len(msg.name)} joints from Gazebo')
+            self.get_logger().info(f'[DEBUG] Joint names: {msg.name[:6]}...')
+            self.get_logger().info(f'[DEBUG] Has velocity: {len(msg.velocity) > 0}')
+            self.first_message = False
+
+        # Process each leg
+        for leg_id in range(1, 7):
             leg_msg = JointState()
             leg_msg.header = msg.header
 
-            for joint_name in wanted_names:
-                idx = name_to_idx[joint_name]
-                leg_msg.name.append(joint_name)
+            # Get joint names for this leg
+            target_joints = self.leg_joints[leg_id]
 
-                if msg.position:
-                    leg_msg.position.append(msg.position[idx])
-                if msg.velocity:
-                    leg_msg.velocity.append(msg.velocity[idx])
-                if msg.effort:
-                    leg_msg.effort.append(msg.effort[idx])
+            # Filter joints by name (if names are provided)
+            if len(msg.name) > 0:
+                # Joint names are available - filter by name
+                for joint_name in target_joints:
+                    if joint_name in msg.name:
+                        idx = msg.name.index(joint_name)
+                        leg_msg.name.append(joint_name)
 
-            self.leg_pubs[leg].publish(leg_msg)
+                        # Copy position if available
+                        if idx < len(msg.position):
+                            leg_msg.position.append(msg.position[idx])
+
+                        # Copy velocity if available
+                        if idx < len(msg.velocity):
+                            leg_msg.velocity.append(msg.velocity[idx])
+
+                        # Copy effort if available
+                        if idx < len(msg.effort):
+                            leg_msg.effort.append(msg.effort[idx])
+
+            else:
+                # No joint names - use positional indexing
+                # Assume joints are ordered: leg1(3), leg2(3), leg3(3), leg4(3), leg5(3), leg6(3)
+                start_idx = (leg_id - 1) * 3
+                end_idx = start_idx + 3
+
+                leg_msg.name = target_joints
+
+                # Copy position
+                if end_idx <= len(msg.position):
+                    leg_msg.position = list(msg.position[start_idx:end_idx])
+                else:
+                    self.get_logger().warn(f'Insufficient position data for leg {leg_id}')
+                    continue
+
+                # Copy velocity if available
+                if end_idx <= len(msg.velocity):
+                    leg_msg.velocity = list(msg.velocity[start_idx:end_idx])
+
+                # Copy effort if available
+                if end_idx <= len(msg.effort):
+                    leg_msg.effort = list(msg.effort[start_idx:end_idx])
+
+            # Publish leg-specific joint states
+            if len(leg_msg.position) > 0:
+                self.leg_pubs[leg_id].publish(leg_msg)
+                self.output_counts[leg_id] += 1
+
+        # Periodic status report
+        if self.input_count % 100 == 0:
+            self.get_logger().info(f'[STATUS] Input: {self.input_count}, Leg1 output: {self.output_counts[1]}')
 
 
 def main(args=None):
     rclpy.init(args=args)
     node = JointStateSplitter()
-    try:
-        rclpy.spin(node)
-    except KeyboardInterrupt:
-        pass
-    finally:
-        node.destroy_node()
-        rclpy.shutdown()
+    rclpy.spin(node)
+    node.destroy_node()
+    rclpy.shutdown()
 
 
 if __name__ == '__main__':

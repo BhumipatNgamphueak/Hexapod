@@ -51,12 +51,18 @@ def generate_launch_description():
     
     robot_description_param = ParameterValue(robot_description_content, value_type=str)
 
-    # Gazebo simulation launch
+    # Gazebo simulation launch with custom world
+    world_file = PathJoinSubstitution([
+        FindPackageShare('hexapod_simulation'),
+        'worlds',
+        'hexapod.sdf'
+    ])
+
     gz_sim = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             [os.path.join(get_package_share_directory('ros_gz_sim'), 'launch', 'gz_sim.launch.py')]
         ),
-        launch_arguments={'gz_args': '-r -v 1 empty.sdf'}.items()
+        launch_arguments={'gz_args': ['-r -v 4 ', world_file]}.items()
     )
 
     # Robot state publisher

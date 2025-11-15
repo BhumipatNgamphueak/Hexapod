@@ -4,6 +4,7 @@
   <ros2_control name="GazeboSimSystem" type="system">
     <hardware>
       <plugin>gz_ros2_control/GazeboSimSystem</plugin>
+      <param name="hold_joints">false</param>
     </hardware>
 
     <!-- LEG 1 JOINTS -->

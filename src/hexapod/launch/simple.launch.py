@@ -102,7 +102,7 @@ def generate_launch_description():
             namespace='hexapod',
             parameters=[{
                 'use_sim_time': LaunchConfiguration('use_sim_time'),
-                # Joint names for each leg (adjust based on your URDF)
+                # Joint names for each leg (matching URDF: hip_joint_X, knee_joint_X, ankle_joint_X)
                 'leg_1_joints': ['hip_joint_1', 'knee_joint_1', 'ankle_joint_1'],
                 'leg_2_joints': ['hip_joint_2', 'knee_joint_2', 'ankle_joint_2'],
                 'leg_3_joints': ['hip_joint_3', 'knee_joint_3', 'ankle_joint_3'],
@@ -126,7 +126,7 @@ def generate_launch_description():
     # =================================================================
     
     # TODO: Change this to range(1, 7) for all legs
-    for leg_id in range(1, 2):  # Currently only leg 1 for testing
+    for leg_id in range(1, 7):  # Currently only leg 1 for testing
         
         leg_ns = f'hexapod/leg_{leg_id}'
         
