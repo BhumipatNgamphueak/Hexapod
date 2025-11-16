@@ -103,12 +103,12 @@ def generate_launch_description():
             parameters=[{
                 'use_sim_time': LaunchConfiguration('use_sim_time'),
                 # Joint names for each leg (adjust based on your URDF)
-                'leg_1_joints': ['leg_1_hip_joint', 'leg_1_knee_joint', 'leg_1_ankle_joint'],
-                'leg_2_joints': ['leg_2_hip_joint', 'leg_2_knee_joint', 'leg_2_ankle_joint'],
-                'leg_3_joints': ['leg_3_hip_joint', 'leg_3_knee_joint', 'leg_3_ankle_joint'],
-                'leg_4_joints': ['leg_4_hip_joint', 'leg_4_knee_joint', 'leg_4_ankle_joint'],
-                'leg_5_joints': ['leg_5_hip_joint', 'leg_5_knee_joint', 'leg_5_ankle_joint'],
-                'leg_6_joints': ['leg_6_hip_joint', 'leg_6_knee_joint', 'leg_6_ankle_joint'],
+                'leg_1_joints': ['hip_joint_1', 'knee_joint_1', 'ankle_joint_1'],
+                'leg_2_joints': ['hip_joint_2', 'knee_joint_2', 'ankle_joint_2'],
+                'leg_3_joints': ['hip_joint_3', 'knee_joint_3', 'ankle_joint_3'],
+                'leg_4_joints': ['hip_joint_4', 'knee_joint_4', 'ankle_joint_4'],
+                'leg_5_joints': ['hip_joint_5', 'knee_joint_5', 'ankle_joint_5'],
+                'leg_6_joints': ['hip_joint_6', 'knee_joint_6', 'ankle_joint_6'],
             }],
             remappings=[
                 # Input
@@ -126,7 +126,7 @@ def generate_launch_description():
     # =================================================================
     
     # TODO: Change this to range(1, 7) for all legs
-    for leg_id in range(1, 7):  # Currently only leg 1 for testing
+    for leg_id in range(1, 2):  # Currently only leg 1 for testing
         
         leg_ns = f'hexapod/leg_{leg_id}'
         
