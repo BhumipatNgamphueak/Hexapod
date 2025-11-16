@@ -126,7 +126,7 @@ def generate_launch_description():
     # =================================================================
     
     # TODO: Change this to range(1, 7) for all legs
-    for leg_id in range(1, 2):  # Currently only leg 1 for testing
+    for leg_id in range(1, 7):  # Currently only leg 1 for testing
         
         leg_ns = f'hexapod/leg_{leg_id}'
         
