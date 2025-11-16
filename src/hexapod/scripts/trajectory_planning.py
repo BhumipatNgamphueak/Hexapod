@@ -44,16 +44,21 @@ class TrajectoryGenerator(Node):
         self.trajectory_start_time = 0.0
         self.current_position = np.array([0.0, 0.0, 0.0])
         self.current_velocity = np.array([0.0, 0.0, 0.0])
+        self.previous_position = np.array([0.0, 0.0, 0.0])
+        
+        # Velocity smoothing
+        self.velocity_filter_alpha = 0.1  # Low-pass filter coefficient
         
         # INPUT: Subscribers
         self.setpoint_sub = self.create_subscription(
-            PointStamped, 'end_effector_setpoint', self.setpoint_callback, 10)
+            PointStamped, f'/hexapod/leg_{self.leg_id}/end_effector_setpoint', 
+            self.setpoint_callback, 10)
         
         # OUTPUT: Publishers
         self.target_pub = self.create_publisher(
-            PointStamped, 'end_effector_target', 10)
+            PointStamped, f'/hexapod/leg_{self.leg_id}/end_effector_target', 10)
         self.velocity_pub = self.create_publisher(
-            Vector3Stamped, 'end_effector_velocity', 10)
+            Vector3Stamped, f'/hexapod/leg_{self.leg_id}/end_effector_velocity', 10)
         
         # Timer - 100 Hz
         self.timer = self.create_timer(self.dt, self.generate_trajectory)
@@ -212,9 +217,9 @@ class TrajectoryGenerator(Node):
         
         # Velocity interpolation (derivatives of Hermite basis)
         dh00 = (6 * tau2 - 6 * tau) / T
-        dh10 = (3 * tau2 - 4 * tau + 1)
+        dh10 = (3 * tau2 - 4 * tau + 1) / T
         dh01 = (-6 * tau2 + 6 * tau) / T
-        dh11 = (3 * tau2 - 2 * tau)
+        dh11 = (3 * tau2 - 2 * tau) / T
         
         velocities = (dh00.reshape(-1, 1) * p0 +
                      dh10.reshape(-1, 1) * (T * v0) +
@@ -231,11 +236,26 @@ class TrajectoryGenerator(Node):
         if len(self.trajectory_buffer) > 0:
             point = self.trajectory_buffer.popleft()
             self.current_position = point['position']
-            self.current_velocity = point['velocity']
+            raw_velocity = point['velocity']
         elif self.current_setpoint is not None:
             # Hold at last setpoint
             self.current_position = self.current_setpoint
-            self.current_velocity = np.array([0.0, 0.0, 0.0])
+            raw_velocity = np.array([0.0, 0.0, 0.0])
+        else:
+            raw_velocity = np.array([0.0, 0.0, 0.0])
+        
+        # Calculate velocity using finite difference (more stable)
+        numerical_velocity = (self.current_position - self.previous_position) / self.dt
+        
+        # Combine analytical and numerical velocity with low-pass filter
+        combined_velocity = 0.5 * raw_velocity + 0.5 * numerical_velocity
+        
+        # Apply exponential smoothing filter
+        self.current_velocity = (self.velocity_filter_alpha * combined_velocity + 
+                                (1 - self.velocity_filter_alpha) * self.current_velocity)
+        
+        # Update previous position for next iteration
+        self.previous_position = self.current_position.copy()
         
         # Publish interpolated target position
         target_msg = PointStamped()
