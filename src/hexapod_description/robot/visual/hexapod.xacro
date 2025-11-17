@@ -27,9 +27,9 @@
             <material name="white"/>
         </visual>
         <collision>
-            <origin xyz="0 0 0" rpy="0 0 0" />
+            <origin xyz="0 0 0.002" rpy="0 0 0" />
             <geometry>
-                <mesh filename="package://hexapod_description/meshes/base_link.STL" />
+                <cylinder radius="0.11" length="0.064"/>
             </geometry>
         </collision>
     </link>
@@ -58,9 +58,9 @@
                 <material name="orange"/>
             </visual>
             <collision>
-                <origin xyz="0 0 0" rpy="0 0 0" />
+                <origin xyz="0.0445 -0.0013 -0.0015" rpy="0 0 0" />
                 <geometry>
-                    <mesh filename="package://hexapod_description/meshes/hip_link_1.STL" />
+                    <box size="0.126 0.061 0.077"/>
                 </geometry>
             </collision>
         </link>
@@ -97,9 +97,9 @@
                 <material name="blue"/>
             </visual>
             <collision>
-                <origin xyz="0 0 0" rpy="0 0 0" />
+                <origin xyz="-0.0484 -0.0449 -0.0011" rpy="0 0 0" />
                 <geometry>
-                    <mesh filename="package://hexapod_description/meshes/knee_link_1.STL" />
+                    <box size="0.134 0.129 0.080"/>
                 </geometry>
             </collision>
         </link>
@@ -137,9 +137,9 @@
                 <material name="grey"/>
             </visual>
             <collision>
-                <origin xyz="0 0 0" rpy="0 0 0" />
+                <origin xyz="0.0717 -0.0069 -0.0059" rpy="0 1.5708 0" />
                 <geometry>
-                    <mesh filename="package://hexapod_description/meshes/ankle_link_1.STL" />
+                    <cylinder radius="0.038" length="0.203"/>
                 </geometry>
             </collision>
         </link>
@@ -176,9 +176,9 @@
                 <material name="grey"/>
             </visual>
             <collision>
-                <origin xyz="0 0 0" rpy="0 0 0" />
+                <origin xyz="-0.0081 0.0008 0" rpy="0 0 0" />
                 <geometry>
-                    <mesh filename="package://hexapod_description/meshes/foot_pointer_1.STL" />
+                    <box size="0.032 0.023 0.022"/>
                 </geometry>
             </collision>
         </link>
@@ -211,9 +211,9 @@
                 <material name="grey"/>
             </visual>
             <collision>
-                <origin xyz="0 0 0" rpy="0 0 0" />
+                <origin xyz="-0.0157 0.0014 0" rpy="0 0 0" />
                 <geometry>
-                    <mesh filename="package://hexapod_description/meshes/end_effector_1.STL" />
+                    <box size="0.032 0.022 0.022"/>
                 </geometry>
             </collision>
         </link>
@@ -225,7 +225,7 @@
             <child link="end_effector_${leg_num}" />
         </joint>
 
-        <!-- FOOT CONTACT SPHERE (for simulation/collision) -->
+        <!-- FOOT CONTACT SPHERE -->
         <link name="foot_contact_${leg_num}">
             <xacro:inertial_sphere mass="${foot_contact_mass}" radius="${foot_contact_radius}">
                 <origin xyz="0 0 0" rpy="0 0 0"/>
@@ -255,32 +255,26 @@
     </xacro:macro>
 
     <!-- INSTANTIATE 6 LEGS -->
-    <!-- Leg 1: Rear Right -->
     <xacro:hexapod_leg leg_num="1" 
                        hip_origin_xyz="-1.2616E-05 -0.095255 0" 
                        hip_origin_rpy="0 0 -1.5708" />
 
-    <!-- Leg 2: Front Right -->
     <xacro:hexapod_leg leg_num="2" 
                        hip_origin_xyz="0.082487 -0.047638 0" 
                        hip_origin_rpy="0 0 -0.5236" />
 
-    <!-- Leg 3: Front Left -->
     <xacro:hexapod_leg leg_num="3" 
                        hip_origin_xyz="0.082499 0.047616 0" 
                        hip_origin_rpy="0 0 0.5236" />
 
-    <!-- Leg 4: Rear Left -->
     <xacro:hexapod_leg leg_num="4" 
                        hip_origin_xyz="1.2616E-05 0.095255 0" 
                        hip_origin_rpy="0 0 1.5708" />
 
-    <!-- Leg 5: Middle Left -->
     <xacro:hexapod_leg leg_num="5" 
                        hip_origin_xyz="-0.082487 0.047638 0" 
                        hip_origin_rpy="0 0 2.618" />
 
-    <!-- Leg 6: Middle Right -->
     <xacro:hexapod_leg leg_num="6" 
                        hip_origin_xyz="-0.082499 -0.047616 0" 
                        hip_origin_rpy="0 0 -2.618" />
