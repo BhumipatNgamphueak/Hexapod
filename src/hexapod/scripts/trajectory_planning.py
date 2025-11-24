@@ -45,6 +45,8 @@ class TrajectoryGenerator(Node):
         self.current_position = np.array([0.0, 0.0, 0.0])
         self.current_velocity = np.array([0.0, 0.0, 0.0])
         self.previous_position = np.array([0.0, 0.0, 0.0])
+        self.phase_type = 0  # 0: stance, 1: swing
+        self.initialized = False  # Flag to prevent bad velocity calculation at startup
         
         # Velocity smoothing
         self.velocity_filter_alpha = 0.1  # Low-pass filter coefficient
@@ -53,6 +55,9 @@ class TrajectoryGenerator(Node):
         self.setpoint_sub = self.create_subscription(
             PointStamped, f'/hexapod/leg_{self.leg_id}/end_effector_setpoint', 
             self.setpoint_callback, 10)
+        self.phase_sub = self.create_subscription(
+            Float64MultiArray, f'/hexapod/leg_{self.leg_id}/phase_info',
+            self.phase_callback, 10)
         
         # OUTPUT: Publishers
         self.target_pub = self.create_publisher(
@@ -65,9 +70,24 @@ class TrajectoryGenerator(Node):
         
         self.get_logger().info(f'Trajectory Generator for leg {self.leg_id} initialized')
     
+    def phase_callback(self, msg):
+        """INPUT: Receive phase information"""
+        # msg.data = [phase_type, progress, leg_phase]
+        # phase_type: 0 = stance, 1 = swing
+        self.phase_type = int(msg.data[0])
+    
     def setpoint_callback(self, msg):
         """INPUT: Receive discrete setpoint and generate trajectory"""
         new_setpoint = np.array([msg.point.x, msg.point.y, msg.point.z])
+        
+        # Initialize position on first setpoint
+        if not self.initialized:
+            self.current_position = new_setpoint.copy()
+            self.previous_position = new_setpoint.copy()
+            self.current_setpoint = new_setpoint
+            self.initialized = True
+            self.get_logger().info(f'Initialized at position: {new_setpoint}')
+            return
         
         # Store previous setpoint
         if self.current_setpoint is not None:
@@ -232,6 +252,10 @@ class TrajectoryGenerator(Node):
         """OUTPUT: Generate smooth trajectory - 100 Hz"""
         self.current_time += self.dt
         
+        # Don't publish until properly initialized
+        if not self.initialized:
+            return
+        
         # If we have trajectory points, use them
         if len(self.trajectory_buffer) > 0:
             point = self.trajectory_buffer.popleft()
@@ -244,15 +268,18 @@ class TrajectoryGenerator(Node):
         else:
             raw_velocity = np.array([0.0, 0.0, 0.0])
         
-        # Calculate velocity using finite difference (more stable)
+        # Calculate velocity using finite difference (more stable and accurate)
         numerical_velocity = (self.current_position - self.previous_position) / self.dt
         
-        # Combine analytical and numerical velocity with low-pass filter
-        combined_velocity = 0.5 * raw_velocity + 0.5 * numerical_velocity
-        
-        # Apply exponential smoothing filter
-        self.current_velocity = (self.velocity_filter_alpha * combined_velocity + 
+        # Use pure numerical differentiation (most accurate for discrete updates)
+        # Apply exponential smoothing filter to reduce noise
+        self.current_velocity = (self.velocity_filter_alpha * numerical_velocity + 
                                 (1 - self.velocity_filter_alpha) * self.current_velocity)
+        
+        # CRITICAL: Force Z velocity to zero during stance phase (foot on ground)
+        # Use phase_type from phase_info: 0 = stance, 1 = swing
+        if self.phase_type == 0:  # Stance phase
+            self.current_velocity[2] = 0.0  # Zero Z velocity during stance
         
         # Update previous position for next iteration
         self.previous_position = self.current_position.copy()
