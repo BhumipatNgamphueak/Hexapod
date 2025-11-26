@@ -1,16 +1,15 @@
 #!/usr/bin/env python3
 """
-Inverse Kinematics Node - URDF-AWARE IMPLEMENTATION (ONE PER LEG)
+Inverse Kinematics Node - URDF-AWARE with BASE FRAME (ONE PER LEG)
 INPUT: /hexapod/leg_X/joint_states (JointState - current joints for seed)
-INPUT: /hexapod/leg_X/end_effector_target (PointStamped - desired foot position)
+INPUT: /hexapod/leg_X/end_effector_target (PointStamped - desired foot position in BASE_LINK)
 OUTPUT: /hexapod/leg_X/joint_position_target (Float64MultiArray - target joint angles)
 Frequency: Callback-based (triggered by target)
 
-URDF-aware IK with RPY offset compensation:
-- Transforms target from base frame to hip local frame
-- Accounts for hip joint RPY offset (yaw -90°)
-- Accounts for knee joint RPY offset (roll 90°, pitch 90°, yaw 180°)
-- Produces joint angles compatible with URDF geometry
+FIXED: Now correctly handles base_link frame with per-leg hip offsets
+- Receives target in base_link (from gait_planner)
+- Transforms to hip-relative coordinates using leg-specific hip offset
+- Computes joint angles θ₁, θ₂, θ₃
 """
 
 import rclpy
@@ -48,7 +47,7 @@ class InverseKinematics(Node):
         self.declare_parameter('end_effector_joint_x', 0.0075528)
         self.declare_parameter('end_effector_joint_y', -0.00094278)
 
-        leg_id = self.get_parameter('leg_id').value
+        self.leg_id = self.get_parameter('leg_id').value
 
         # Store offsets for URDF-aware transformations
         self.knee_offset = np.array([
@@ -77,7 +76,9 @@ class InverseKinematics(Node):
         # URDF RPY offsets (from hexapod.urdf)
         self.hip_rpy = np.array([0.0, 0.0, -1.5708])  # Hip joint RPY offset
         self.knee_rpy = np.array([1.5708, 1.5708, 3.142])  # Knee joint RPY offset
-        self.hip_xyz = np.array([-1.2616e-05, -0.095255, 0.0])  # Hip joint xyz offset
+
+        # FIXED: Hip offset from base_link to hip joint (leg-specific)
+        self.hip_xyz = self._get_hip_offset(self.leg_id)
 
         self.target_sub = self.create_subscription(
             PointStamped, 'end_effector_target', self.target_callback, 10)
@@ -90,10 +91,53 @@ class InverseKinematics(Node):
         self.declare_parameter('use_numerical_ik', True)
         self.use_numerical_ik = self.get_parameter('use_numerical_ik').value
 
-        self.get_logger().info(f'Inverse Kinematics initialized for leg {leg_id}')
+        self.get_logger().info(f'Inverse Kinematics initialized for leg {self.leg_id}')
         self.get_logger().info(f'Link lengths: L1={self.L1:.4f}, L2={self.L2:.4f}, L3={self.L3:.4f}')
-        self.get_logger().info('URDF-aware IK with RPY compensation enabled')
+        self.get_logger().info(f'Hip offset (base_link → hip): {self.hip_xyz}')
+        self.get_logger().info('FIXED: Using base_link frame with per-leg hip offsets')
         self.get_logger().info(f'IK Mode: {"NUMERICAL (Optimized)" if self.use_numerical_ik else "ANALYTICAL (Fast)"}')
+
+    def _get_hip_offset(self, leg_id):
+        """
+        Get hip joint offset from base_link for each leg
+
+        Leg layout (top view):
+              Front
+          1         6
+          2         5
+          3         4
+             Back
+
+        Leg 1: Front Right  →  X=+0.0785, Y=-0.095255
+        Leg 2: Middle Right →  X=0,       Y=-0.095255
+        Leg 3: Rear Right   →  X=-0.0785, Y=-0.095255
+        Leg 4: Rear Left    →  X=-0.0785, Y=+0.095255
+        Leg 5: Middle Left  →  X=0,       Y=+0.095255
+        Leg 6: Front Left   →  X=+0.0785, Y=+0.095255
+        """
+        # X offsets (front-back position)
+        x_front = 0.0785
+        x_middle = 0.0
+        x_rear = -0.0785
+
+        # Y offsets (left-right position)
+        y_right = -0.095255
+        y_left = 0.095255
+
+        # Z offset (all legs same height)
+        z_offset = 0.0
+
+        # Map leg_id to offsets
+        hip_offsets = {
+            1: np.array([x_front, y_right, z_offset]),   # Front Right
+            2: np.array([x_middle, y_right, z_offset]),  # Middle Right
+            3: np.array([x_rear, y_right, z_offset]),    # Rear Right
+            4: np.array([x_rear, y_left, z_offset]),     # Rear Left
+            5: np.array([x_middle, y_left, z_offset]),   # Middle Left
+            6: np.array([x_front, y_left, z_offset])     # Front Left
+        }
+
+        return hip_offsets.get(leg_id, np.array([0.0, 0.0, 0.0]))
 
     @staticmethod
     def rotation_x(theta):
@@ -119,12 +163,14 @@ class InverseKinematics(Node):
 
     def forward_kinematics(self, theta1, theta2, theta3):
         """
-        Forward kinematics for numerical IK (same as FK node)
+        Forward kinematics - computes end effector position in BASE_LINK frame
+
+        FIXED: Now correctly returns position in base_link by adding hip_xyz offset
         """
         # Hip joint (with RPY offset)
         R_hip_static = self.rpy_to_matrix(*self.hip_rpy)
         R1 = R_hip_static @ self.rotation_z(theta1)
-        T1 = self.hip_xyz + R1 @ self.knee_offset
+        T1 = self.hip_xyz + R1 @ self.knee_offset  # FIXED: Added hip_xyz offset
 
         # Knee joint (with RPY offset)
         R_knee_static = self.rpy_to_matrix(1.5708, 1.5708, 3.142)
@@ -135,7 +181,7 @@ class InverseKinematics(Node):
         R3 = R2 @ self.rotation_z(theta3)
         T3 = T2 + R3 @ self.foot_offset
 
-        return T3
+        return T3  # Position in base_link frame
 
     def compute_jacobian(self, theta):
         """Numerical Jacobian for IK"""
@@ -152,33 +198,40 @@ class InverseKinematics(Node):
         return J
 
     def inverse_kinematics_analytical(self, target_base):
-        """Analytical IK (fast but approximate)"""
+        """
+        Analytical IK - simplified geometric solution
+
+        INPUT: target_base - position in base_link frame
+        OUTPUT: [θ₁, θ₂, θ₃] joint angles
+
+        FIXED: Now transforms target from base_link to hip-relative coordinates
+        """
+        # Transform target from base_link to hip-relative coordinates
+        target_hip_relative = target_base - self.hip_xyz
+
+        # Extract coordinates
+        Xp = target_hip_relative[0]
+        Yp = target_hip_relative[1]
+        Zp = target_hip_relative[2]
+
         try:
-            # Transform target to hip local frame
-            R_hip_offset = self.rpy_to_matrix(*self.hip_rpy)
-            target_hip_frame = R_hip_offset.T @ (target_base - self.hip_xyz)
+            # θ₁: Hip joint angle (yaw)
+            theta1 = np.arctan2(Yp, Xp)
 
-            Xp_hip = target_hip_frame[0]
-            Yp_hip = target_hip_frame[1]
-            Zp_hip = target_hip_frame[2]
+            # Project to X-Z plane
+            r2 = Xp / np.cos(theta1) - self.L1
 
-            # Compute IK in hip local frame
-            theta1 = np.arctan2(Yp_hip, Xp_hip)
-            r1 = np.sqrt(Xp_hip**2 + Yp_hip**2) - self.L1
-            r2 = np.sqrt(r1**2 + Zp_hip**2)
+            # Distance in X-Z plane
+            r1 = np.sqrt(Zp**2 + r2**2)
 
-            # Check reachability
-            if r2 > (self.L2 + self.L3) or r2 < abs(self.L2 - self.L3):
-                return None
-
-            # Law of cosines
-            phi1 = np.arctan2(Zp_hip, r1)
-
-            cos_phi3 = (self.L2**2 + self.L3**2 - r2**2) / (2 * self.L2 * self.L3)
+            # θ₂ and θ₃: Knee and ankle angles (2-link planar IK)
+            cos_phi3 = (r1**2 - self.L2**2 - self.L3**2) / (2 * self.L2 * self.L3)
             cos_phi3 = np.clip(cos_phi3, -1.0, 1.0)
             phi3 = np.arccos(cos_phi3)
 
-            cos_phi2 = (self.L2**2 + r2**2 - self.L3**2) / (2 * self.L2 * r2)
+            phi1 = np.arctan2(Zp, r2)
+
+            cos_phi2 = (self.L2**2 + r1**2 - self.L3**2) / (2 * self.L2 * r1)
             cos_phi2 = np.clip(cos_phi2, -1.0, 1.0)
             phi2 = np.arccos(cos_phi2)
 
@@ -190,18 +243,17 @@ class InverseKinematics(Node):
         except Exception:
             return None
 
-    def inverse_kinematics_numerical(self, target):
+    def inverse_kinematics_numerical(self, target_base):
         """
         Optimized Numerical IK with Jacobian
-        OPTIMIZATIONS:
-        - Reduced max iterations: 30 → 15 (faster)
-        - Relaxed tolerance: 0.1mm → 1mm (practical accuracy)
-        - Reduced line search: 10 → 5 iterations
-        - Better damping: 0.01 → 0.005 (faster convergence)
-        Expected: ~1-2ms computation time, <1mm error
+
+        INPUT: target_base - position in base_link frame
+        OUTPUT: [θ₁, θ₂, θ₃] joint angles
+
+        FIXED: FK now handles base_link correctly, so this works as-is
         """
         # Get initial guess from analytical IK (fast initial guess)
-        theta_init = self.inverse_kinematics_analytical(target)
+        theta_init = self.inverse_kinematics_analytical(target_base)
 
         if theta_init is None:
             # Fallback: neutral pose
@@ -216,7 +268,7 @@ class InverseKinematics(Node):
 
         for iteration in range(max_iterations):
             current_pos = self.forward_kinematics(*theta)
-            error = target - current_pos
+            error = target_base - current_pos
             error_norm = np.linalg.norm(error)
 
             # Early termination
@@ -227,33 +279,35 @@ class InverseKinematics(Node):
             JtJ = J.T @ J
             Jt_error = J.T @ error
 
-            try:
-                # Damped least squares (Levenberg-Marquardt)
-                delta_theta = np.linalg.solve(JtJ + lambda_damping * np.eye(3), Jt_error)
-            except np.linalg.LinAlgError:
-                # Fallback to pseudo-inverse
-                delta_theta = np.linalg.pinv(J) @ error
+            # Damped least squares (Levenberg-Marquardt)
+            damping_matrix = lambda_damping * np.eye(3)
 
-            # REDUCED line search: 10 → 5 iterations
-            alpha = 1.0
-            new_error_norm = error_norm
-            for _ in range(5):
-                theta_new = theta + alpha * delta_theta
-                new_pos = self.forward_kinematics(*theta_new)
-                new_error_norm = np.linalg.norm(target - new_pos)
+            # Line search for step size
+            best_alpha = 1.0
+            best_error = error_norm
 
-                if new_error_norm < error_norm:
-                    theta = theta_new
-                    break
-                else:
-                    alpha *= 0.5
+            for alpha in [1.0, 0.5, 0.25, 0.1, 0.05]:
+                try:
+                    delta_theta = alpha * np.linalg.solve(JtJ + damping_matrix, Jt_error)
+                    theta_new = theta + delta_theta
+
+                    new_pos = self.forward_kinematics(*theta_new)
+                    new_error_norm = np.linalg.norm(target_base - new_pos)
+
+                    if new_error_norm < best_error:
+                        best_alpha = alpha
+                        best_error = new_error_norm
+                        theta = theta_new
+                        break
+                except np.linalg.LinAlgError:
+                    continue
 
             # Early stopping if stuck
-            if abs(new_error_norm - error_norm) < 1e-6:
+            if abs(best_error - error_norm) < 1e-6:
                 break
 
             # Adaptive damping
-            if new_error_norm < error_norm:
+            if best_error < error_norm:
                 lambda_damping *= 0.85  # Faster reduction
             else:
                 lambda_damping *= 1.5
@@ -261,8 +315,19 @@ class InverseKinematics(Node):
         return theta
 
     def target_callback(self, msg):
-        """INPUT: Receive target end effector position and compute IK"""
-        # Target in base frame
+        """
+        INPUT: Receive target end effector position in BASE_LINK and compute IK
+
+        FIXED: Now expects frame_id = 'base_link' (from gait_planner via trajectory_generator)
+        """
+        # Verify frame_id
+        if msg.header.frame_id != 'base_link':
+            self.get_logger().warn(
+                f'Expected frame_id=base_link, got {msg.header.frame_id}. '
+                f'Proceeding anyway but check trajectory_planning.py'
+            )
+
+        # Target in base frame (as expected)
         target_base = np.array([msg.point.x, msg.point.y, msg.point.z])
 
         try:

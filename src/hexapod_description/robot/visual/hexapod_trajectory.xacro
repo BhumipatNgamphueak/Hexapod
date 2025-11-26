@@ -4,12 +4,16 @@
     <xacro:include filename="$(find hexapod_description)/robot/visual/inertial_macros.xacro" />
     <xacro:include filename="$(find hexapod_description)/robot/visual/hexapod_params.xacro" />
     <xacro:include filename="$(find hexapod_description)/robot/visual/robot_material.xacro" />
-    <xacro:include filename="$(find hexapod_description)/robot/visual/gazebo_full.xacro" />
+    <xacro:include filename="$(find hexapod_description)/robot/visual/gazebo_trajectory.xacro" />
 
-    <!-- WORLD LINK (for fixing robot in air during tuning) -->
+    <!-- Property to enable/disable mesh rendering (for debugging) -->
+    <xacro:property name="use_mesh" value="true" />
+
+    <!-- WORLD LINK - Required for mesh rendering in Gazebo -->
     <link name="world"/>
 
-    <!-- FIXED JOINT (world to base_link - for PID tuning) -->
+    <!-- FIXED JOINT - Enables mesh rendering, keeps robot suspended for testing -->
+    <!-- NOTE: For walking simulation, this should be removed and robot spawned on ground -->
     <joint name="world_to_base" type="fixed">
         <parent link="world"/>
         <child link="base_link"/>
@@ -46,7 +50,7 @@
 
     <!-- LEG MACRO -->
     <xacro:macro name="hexapod_leg" params="leg_num hip_origin_xyz hip_origin_rpy">
-        
+
         <!-- HIP LINK -->
         <link name="hip_link_${leg_num}">
             <inertial>
@@ -81,7 +85,7 @@
             <parent link="base_link" />
             <child link="hip_link_${leg_num}" />
             <axis xyz="0 0 1" />
-            <limit effort="${joint_effort}" velocity="${joint_velocity}" 
+            <limit effort="${joint_effort}" velocity="${joint_velocity}"
                    lower="${hip_lower_limit}" upper="${hip_upper_limit}" />
             <dynamics damping="${hip_damping}" friction="${hip_friction}"/>
         </joint>
@@ -116,12 +120,12 @@
 
         <!-- KNEE JOINT -->
         <joint name="knee_joint_${leg_num}" type="revolute">
-            <origin xyz="${knee_joint_x} ${knee_joint_y} ${knee_joint_z}" 
+            <origin xyz="${knee_joint_x} ${knee_joint_y} ${knee_joint_z}"
                     rpy="1.5708 1.5708 3.142" />
             <parent link="hip_link_${leg_num}" />
             <child link="knee_link_${leg_num}" />
             <axis xyz="0 0 1" />
-            <limit effort="${joint_effort}" velocity="${joint_velocity}" 
+            <limit effort="${joint_effort}" velocity="${joint_velocity}"
                    lower="${knee_lower_limit}" upper="${knee_upper_limit}" />
             <dynamics damping="${knee_damping}" friction="${knee_friction}"/>
         </joint>
@@ -160,7 +164,7 @@
             <parent link="knee_link_${leg_num}" />
             <child link="ankle_link_${leg_num}" />
             <axis xyz="0 0 1" />
-            <limit effort="${joint_effort}" velocity="${joint_velocity}" 
+            <limit effort="${joint_effort}" velocity="${joint_velocity}"
                    lower="${ankle_lower_limit}" upper="${ankle_upper_limit}" />
             <dynamics damping="${ankle_damping}" friction="${ankle_friction}"/>
         </joint>
@@ -264,29 +268,29 @@
 
     </xacro:macro>
 
-    <!-- INSTANTIATE 6 LEGS -->
-    <xacro:hexapod_leg leg_num="1" 
-                       hip_origin_xyz="-1.2616E-05 -0.095255 0" 
+    <!-- INSTANTIATE 6 LEGS - Using correct hexagonal layout from hexapod.xacro -->
+    <xacro:hexapod_leg leg_num="1"
+                       hip_origin_xyz="-1.2616E-05 -0.095255 0"
                        hip_origin_rpy="0 0 -1.5708" />
 
-    <xacro:hexapod_leg leg_num="2" 
-                       hip_origin_xyz="0.082487 -0.047638 0" 
+    <xacro:hexapod_leg leg_num="2"
+                       hip_origin_xyz="0.082487 -0.047638 0"
                        hip_origin_rpy="0 0 -0.5236" />
 
-    <xacro:hexapod_leg leg_num="3" 
-                       hip_origin_xyz="0.082499 0.047616 0" 
+    <xacro:hexapod_leg leg_num="3"
+                       hip_origin_xyz="0.082499 0.047616 0"
                        hip_origin_rpy="0 0 0.5236" />
 
-    <xacro:hexapod_leg leg_num="4" 
-                       hip_origin_xyz="1.2616E-05 0.095255 0" 
+    <xacro:hexapod_leg leg_num="4"
+                       hip_origin_xyz="1.2616E-05 0.095255 0"
                        hip_origin_rpy="0 0 1.5708" />
 
-    <xacro:hexapod_leg leg_num="5" 
-                       hip_origin_xyz="-0.082487 0.047638 0" 
+    <xacro:hexapod_leg leg_num="5"
+                       hip_origin_xyz="-0.082487 0.047638 0"
                        hip_origin_rpy="0 0 2.618" />
 
-    <xacro:hexapod_leg leg_num="6" 
-                       hip_origin_xyz="-0.082499 -0.047616 0" 
+    <xacro:hexapod_leg leg_num="6"
+                       hip_origin_xyz="-0.082499 -0.047616 0"
                        hip_origin_rpy="0 0 -2.618" />
 
 </robot>

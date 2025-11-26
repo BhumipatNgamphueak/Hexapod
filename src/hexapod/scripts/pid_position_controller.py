@@ -31,6 +31,7 @@ class PositionPIDController(Node):
         self.declare_parameter('velocity_limit', 5.0)
         self.declare_parameter('control_rate', 100.0)
         self.declare_parameter('integral_limit', 2.0)  # Anti-windup
+        self.declare_parameter('derivative_filter_alpha', 0.3)  # Derivative filter
 
         leg_id = self.get_parameter('leg_id').value
         control_rate = self.get_parameter('control_rate').value
@@ -41,6 +42,7 @@ class PositionPIDController(Node):
         self.kd = np.array(self.get_parameter('position_kd').value)
         self.velocity_limit = self.get_parameter('velocity_limit').value
         self.integral_limit = self.get_parameter('integral_limit').value
+        self.derivative_alpha = self.get_parameter('derivative_filter_alpha').value
 
         # Control loop timing
         self.dt = 1.0 / control_rate
@@ -50,6 +52,7 @@ class PositionPIDController(Node):
         self.target_position = np.zeros(3)
         self.previous_error = np.zeros(3)
         self.integral_error = np.zeros(3)
+        self.filtered_derivative = np.zeros(3)  # Filtered derivative term
 
         # Flags
         self.position_received = False
@@ -72,6 +75,7 @@ class PositionPIDController(Node):
         self.get_logger().info(f'Control rate: {control_rate} Hz (dt={self.dt*1000:.2f}ms)')
         self.get_logger().info(f'PID Gains - Kp: {self.kp}, Ki: {self.ki}, Kd: {self.kd}')
         self.get_logger().info(f'Velocity limit: ±{self.velocity_limit} rad/s')
+        self.get_logger().info(f'Derivative filter alpha: {self.derivative_alpha}')
 
     def joint_state_callback(self, msg):
         """INPUT: Receive current joint positions"""
@@ -108,13 +112,15 @@ class PositionPIDController(Node):
                                       -self.integral_limit,
                                       self.integral_limit)
 
-        # Derivative term
-        derivative = (error - self.previous_error) / self.dt
+        # Derivative term with low-pass filter to reduce noise
+        derivative_raw = (error - self.previous_error) / self.dt
+        self.filtered_derivative = (self.derivative_alpha * derivative_raw +
+                                   (1 - self.derivative_alpha) * self.filtered_derivative)
 
         # PID output (velocity command)
         velocity_command = (self.kp * error +
                            self.ki * self.integral_error +
-                           self.kd * derivative)
+                           self.kd * self.filtered_derivative)
 
         # Apply velocity limits (safety)
         velocity_command = np.clip(velocity_command,
@@ -133,6 +139,7 @@ class PositionPIDController(Node):
         """Reset PID state (useful when target changes drastically)"""
         self.integral_error = np.zeros(3)
         self.previous_error = np.zeros(3)
+        self.filtered_derivative = np.zeros(3)
 
 
 def main(args=None):

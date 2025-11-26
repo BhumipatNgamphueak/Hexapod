@@ -29,6 +29,7 @@ ament_python_install_package(${PROJECT_NAME})
 install(PROGRAMS
   scripts/forward_position_kinematic.py
   scripts/gait_planning.py
+  scripts/gravity_compensation.py
   scripts/inverse_position_kinematic.py
   scripts/inverse_velocity_kinematic.py
   scripts/joint_state_splitter.py
@@ -37,6 +38,7 @@ install(PROGRAMS
   scripts/set_point.py
   scripts/state_controller.py
   scripts/trajectory_planning.py
+  scripts/trajectory_controller_bridge.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

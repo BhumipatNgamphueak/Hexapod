@@ -1,0 +1,336 @@
+controller_manager:
+  ros__parameters:
+    update_rate: 100
+    use_sim_time: true
+
+    joint_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
+
+    # Joint Trajectory Controllers - one per leg
+    joint_trajectory_controller_leg_1:
+      type: joint_trajectory_controller/JointTrajectoryController
+
+    joint_trajectory_controller_leg_2:
+      type: joint_trajectory_controller/JointTrajectoryController
+
+    joint_trajectory_controller_leg_3:
+      type: joint_trajectory_controller/JointTrajectoryController
+
+    joint_trajectory_controller_leg_4:
+      type: joint_trajectory_controller/JointTrajectoryController
+
+    joint_trajectory_controller_leg_5:
+      type: joint_trajectory_controller/JointTrajectoryController
+
+    joint_trajectory_controller_leg_6:
+      type: joint_trajectory_controller/JointTrajectoryController
+
+
+# ============================================================================
+# Joint Trajectory Controller Configuration for each leg
+# ============================================================================
+
+# Leg 1 Controller
+joint_trajectory_controller_leg_1:
+  ros__parameters:
+    use_sim_time: true
+
+    # Joints controlled by this controller
+    joints:
+      - hip_joint_1
+      - knee_joint_1
+      - ankle_joint_1
+
+    # Command interface (position control)
+    command_interfaces:
+      - position
+
+    # State interfaces
+    state_interfaces:
+      - position
+      - velocity
+
+    # State publishing
+    state_publish_rate: 100.0
+
+    # Action monitoring
+    action_monitor_rate: 20.0
+
+    # Allow partial goal (useful for IK failures)
+    allow_partial_joints_goal: false
+
+    # Trajectory constraints - เพิ่ม tolerances เพื่อรองรับ gravity และ initial position error
+    constraints:
+      stopped_velocity_tolerance: 0.1  # เพิ่มจาก 0.01
+      goal_time: 0.0  # No time constraint (wait indefinitely)
+
+      hip_joint_1:
+        trajectory: 0.3  # เพิ่มจาก 0.05 → 0.3 rad (~17 degrees)
+        goal: 0.05       # เก็บไว้สำหรับ final accuracy
+      knee_joint_1:
+        trajectory: 0.3  # เพิ่มจาก 0.05 → 0.3 rad
+        goal: 0.05
+      ankle_joint_1:
+        trajectory: 0.3  # เพิ่มจาก 0.05 → 0.3 rad
+        goal: 0.05
+
+    # PID gains [Hip, Knee, Ankle]
+    gains:
+      hip_joint_1:
+        p: 100.0
+        i: 0.01
+        d: 10.0
+        i_clamp: 1.0
+        ff_velocity_scale: 1.0
+      knee_joint_1:
+        p: 100.0
+        i: 0.01
+        d: 10.0
+        i_clamp: 1.0
+        ff_velocity_scale: 1.0
+      ankle_joint_1:
+        p: 100.0
+        i: 0.01
+        d: 10.0
+        i_clamp: 1.0
+        ff_velocity_scale: 1.0
+
+# Leg 2 Controller
+joint_trajectory_controller_leg_2:
+  ros__parameters:
+    use_sim_time: true
+    joints:
+      - hip_joint_2
+      - knee_joint_2
+      - ankle_joint_2
+    command_interfaces:
+      - position
+    state_interfaces:
+      - position
+      - velocity
+    state_publish_rate: 100.0
+    action_monitor_rate: 20.0
+    allow_partial_joints_goal: false
+    constraints:
+      stopped_velocity_tolerance: 0.1
+      goal_time: 0.0
+      hip_joint_2:
+        trajectory: 0.3
+        goal: 0.05
+      knee_joint_2:
+        trajectory: 0.3
+        goal: 0.05
+      ankle_joint_2:
+        trajectory: 0.3
+        goal: 0.05
+    gains:
+      hip_joint_2:
+        p: 100.0
+        i: 0.01
+        d: 10.0
+        i_clamp: 1.0
+        ff_velocity_scale: 1.0
+      knee_joint_2:
+        p: 100.0
+        i: 0.01
+        d: 10.0
+        i_clamp: 1.0
+        ff_velocity_scale: 1.0
+      ankle_joint_2:
+        p: 100.0
+        i: 0.01
+        d: 10.0
+        i_clamp: 1.0
+        ff_velocity_scale: 1.0
+
+# Leg 3 Controller
+joint_trajectory_controller_leg_3:
+  ros__parameters:
+    use_sim_time: true
+    joints:
+      - hip_joint_3
+      - knee_joint_3
+      - ankle_joint_3
+    command_interfaces:
+      - position
+    state_interfaces:
+      - position
+      - velocity
+    state_publish_rate: 100.0
+    action_monitor_rate: 20.0
+    allow_partial_joints_goal: false
+    constraints:
+      stopped_velocity_tolerance: 0.1
+      goal_time: 0.0
+      hip_joint_3:
+        trajectory: 0.3
+        goal: 0.05
+      knee_joint_3:
+        trajectory: 0.3
+        goal: 0.05
+      ankle_joint_3:
+        trajectory: 0.3
+        goal: 0.05
+    gains:
+      hip_joint_3:
+        p: 100.0
+        i: 0.01
+        d: 10.0
+        i_clamp: 1.0
+        ff_velocity_scale: 1.0
+      knee_joint_3:
+        p: 100.0
+        i: 0.01
+        d: 10.0
+        i_clamp: 1.0
+        ff_velocity_scale: 1.0
+      ankle_joint_3:
+        p: 100.0
+        i: 0.01
+        d: 10.0
+        i_clamp: 1.0
+        ff_velocity_scale: 1.0
+
+# Leg 4 Controller
+joint_trajectory_controller_leg_4:
+  ros__parameters:
+    use_sim_time: true
+    joints:
+      - hip_joint_4
+      - knee_joint_4
+      - ankle_joint_4
+    command_interfaces:
+      - position
+    state_interfaces:
+      - position
+      - velocity
+    state_publish_rate: 100.0
+    action_monitor_rate: 20.0
+    allow_partial_joints_goal: false
+    constraints:
+      stopped_velocity_tolerance: 0.1
+      goal_time: 0.0
+      hip_joint_4:
+        trajectory: 0.3
+        goal: 0.05
+      knee_joint_4:
+        trajectory: 0.3
+        goal: 0.05
+      ankle_joint_4:
+        trajectory: 0.3
+        goal: 0.05
+    gains:
+      hip_joint_4:
+        p: 100.0
+        i: 0.01
+        d: 10.0
+        i_clamp: 1.0
+        ff_velocity_scale: 1.0
+      knee_joint_4:
+        p: 100.0
+        i: 0.01
+        d: 10.0
+        i_clamp: 1.0
+        ff_velocity_scale: 1.0
+      ankle_joint_4:
+        p: 100.0
+        i: 0.01
+        d: 10.0
+        i_clamp: 1.0
+        ff_velocity_scale: 1.0
+
+# Leg 5 Controller
+joint_trajectory_controller_leg_5:
+  ros__parameters:
+    use_sim_time: true
+    joints:
+      - hip_joint_5
+      - knee_joint_5
+      - ankle_joint_5
+    command_interfaces:
+      - position
+    state_interfaces:
+      - position
+      - velocity
+    state_publish_rate: 100.0
+    action_monitor_rate: 20.0
+    allow_partial_joints_goal: false
+    constraints:
+      stopped_velocity_tolerance: 0.1
+      goal_time: 0.0
+      hip_joint_5:
+        trajectory: 0.3
+        goal: 0.05
+      knee_joint_5:
+        trajectory: 0.3
+        goal: 0.05
+      ankle_joint_5:
+        trajectory: 0.3
+        goal: 0.05
+    gains:
+      hip_joint_5:
+        p: 100.0
+        i: 0.01
+        d: 10.0
+        i_clamp: 1.0
+        ff_velocity_scale: 1.0
+      knee_joint_5:
+        p: 100.0
+        i: 0.01
+        d: 10.0
+        i_clamp: 1.0
+        ff_velocity_scale: 1.0
+      ankle_joint_5:
+        p: 100.0
+        i: 0.01
+        d: 10.0
+        i_clamp: 1.0
+        ff_velocity_scale: 1.0
+
+# Leg 6 Controller
+joint_trajectory_controller_leg_6:
+  ros__parameters:
+    use_sim_time: true
+    joints:
+      - hip_joint_6
+      - knee_joint_6
+      - ankle_joint_6
+    command_interfaces:
+      - position
+    state_interfaces:
+      - position
+      - velocity
+    state_publish_rate: 100.0
+    action_monitor_rate: 20.0
+    allow_partial_joints_goal: false
+    constraints:
+      stopped_velocity_tolerance: 0.1
+      goal_time: 0.0
+      hip_joint_6:
+        trajectory: 0.3
+        goal: 0.05
+      knee_joint_6:
+        trajectory: 0.3
+        goal: 0.05
+      ankle_joint_6:
+        trajectory: 0.3
+        goal: 0.05
+    gains:
+      hip_joint_6:
+        p: 100.0
+        i: 0.01
+        d: 10.0
+        i_clamp: 1.0
+        ff_velocity_scale: 1.0
+      knee_joint_6:
+        p: 100.0
+        i: 0.01
+        d: 10.0
+        i_clamp: 1.0
+        ff_velocity_scale: 1.0
+      ankle_joint_6:
+        p: 100.0
+        i: 0.01
+        d: 10.0
+        i_clamp: 1.0
+        ff_velocity_scale: 1.0

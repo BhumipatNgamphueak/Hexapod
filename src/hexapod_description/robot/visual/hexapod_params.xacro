@@ -32,7 +32,7 @@
     <xacro:property name="end_effector_joint_y" value="-0.00094278"/>
     
     <!-- JOINT LIMITS (radians) -->
-    <xacro:property name="joint_effort" value="10.0"/>
+    <xacro:property name="joint_effort" value="20.0"/>
     <xacro:property name="joint_velocity" value="5.0"/>
     
     <!-- Hip joint limits -->
@@ -40,25 +40,25 @@
     <xacro:property name="hip_upper_limit" value="1.57"/>
     
     <!-- Knee joint limits -->
-    <xacro:property name="knee_lower_limit" value="-2.0"/>
-    <xacro:property name="knee_upper_limit" value="2.0"/>
+    <xacro:property name="knee_lower_limit" value="-3.14"/>
+    <xacro:property name="knee_upper_limit" value="3.14"/>
     
     <!-- Ankle joint limits -->
-    <xacro:property name="ankle_lower_limit" value="-1.57"/>
-    <xacro:property name="ankle_upper_limit" value="1.57"/>
+    <xacro:property name="ankle_lower_limit" value="-3.14"/>
+    <xacro:property name="ankle_upper_limit" value="3.14"/>
     
     <!-- JOINT DYNAMICS -->
-    <!-- Hip joint -->
-    <xacro:property name="hip_damping" value="0.1"/>
-    <xacro:property name="hip_friction" value="0.05"/>
-    
-    <!-- Knee joint -->
-    <xacro:property name="knee_damping" value="0.1"/>
-    <xacro:property name="knee_friction" value="0.05"/>
-    
-    <!-- Ankle joint -->
-    <xacro:property name="ankle_damping" value="0.1"/>
-    <xacro:property name="ankle_friction" value="0.05"/>
+    <!-- Hip joint - Updated for PID tuning -->
+    <xacro:property name="hip_damping" value="0.019728"/>
+    <xacro:property name="hip_friction" value="0.01"/>
+
+    <!-- Knee joint - Updated for PID tuning -->
+    <xacro:property name="knee_damping" value="0.1"/>  <!-- INCREASED to reduce oscillation -->
+    <xacro:property name="knee_friction" value="0.01"/>
+
+    <!-- Ankle joint - Updated for PID tuning -->
+    <xacro:property name="ankle_damping" value="0.019728"/>
+    <xacro:property name="ankle_friction" value="0.01"/>
     
 <!-- FOOT CONTACT PARAMETERS -->
     <xacro:property name="foot_contact_radius" value="0.01"/>

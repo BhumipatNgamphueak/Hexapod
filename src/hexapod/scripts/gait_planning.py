@@ -18,7 +18,7 @@ import numpy as np
 class GaitPlanner(Node):
     def __init__(self):
         super().__init__('gait_planner')
-        
+
         # Parameters
         self.declare_parameter('default_gait_type', 0)  # 0: tripod, 1: wave, 2: ripple
         self.declare_parameter('max_linear_x', 0.3)
@@ -30,6 +30,17 @@ class GaitPlanner(Node):
         self.declare_parameter('max_cycle_time', 2.0)
         self.declare_parameter('num_legs', 6)
         self.declare_parameter('num_waypoints', 8)
+
+        # Leg home positions (default stance) relative to base_link
+        # Format: flat list [x1, y1, z1, x2, y2, z2, ...] (will be reshaped to 6x3)
+        self.declare_parameter('leg_home_positions', [
+            0.15, -0.15, -0.10,  # Leg 1 (Front Right)
+            0.15,  0.00, -0.10,  # Leg 2 (Middle Right)
+            0.15,  0.15, -0.10,  # Leg 3 (Rear Right)
+           -0.15,  0.15, -0.10,  # Leg 4 (Rear Left)
+           -0.15,  0.00, -0.10,  # Leg 5 (Middle Left)
+           -0.15, -0.15, -0.10   # Leg 6 (Front Left)
+        ])
         
         # Get parameters
         self.default_gait = self.get_parameter('default_gait_type').value
@@ -42,13 +53,18 @@ class GaitPlanner(Node):
         self.max_cycle_time = self.get_parameter('max_cycle_time').value
         self.num_legs = self.get_parameter('num_legs').value
         self.num_waypoints = self.get_parameter('num_waypoints').value
-        
+
+        # Get leg home positions
+        leg_home_raw = self.get_parameter('leg_home_positions').value
+        self.leg_home_positions = np.array(leg_home_raw).reshape(6, 3)
+
         # State variables
         self.current_cmd_vel = Twist()
         self.filtered_velocity = Twist()
         self.current_gait_type = self.default_gait
         self.gait_phase = 0.0  # Phase tracker [0, 1]
         self.dt = 0.1  # 10 Hz
+        self.leg_phases = np.zeros(6)  # Phase for each leg [0, 1]
         
         # Gait definitions (duty factor = fraction of cycle in stance)
         self.gait_configs = {
@@ -60,17 +76,28 @@ class GaitPlanner(Node):
         # INPUT: Subscribe to velocity commands
         self.cmd_vel_sub = self.create_subscription(
             Twist, '/cmd_vel', self.cmd_vel_callback, 10)
-        
-        # OUTPUT: Publishers (only gait parameters and body velocity)
+
+        # OUTPUT: Publishers
         self.gait_params_pub = self.create_publisher(
             Float64MultiArray, '/hexapod/gait_parameters', 10)
         self.body_vel_pub = self.create_publisher(
             Twist, '/hexapod/body_velocity', 10)
-        
+
+        # End effector setpoint publishers for each leg
+        self.setpoint_pubs = []
+        for leg_id in range(1, 7):
+            pub = self.create_publisher(
+                PointStamped,
+                f'/hexapod/leg_{leg_id}/end_effector_setpoint',
+                10
+            )
+            self.setpoint_pubs.append(pub)
+
         # Timer - 10 Hz
         self.timer = self.create_timer(self.dt, self.publish_gait)
-        
+
         self.get_logger().info(f'Gait Planner initialized with {self.num_legs} legs')
+        self.get_logger().info(f'Publishing setpoints to /hexapod/leg_X/end_effector_setpoint')
     
     def cmd_vel_callback(self, msg):
         """INPUT: Receive velocity commands"""
@@ -166,29 +193,93 @@ class GaitPlanner(Node):
         
         return 0.0
     
+    def _compute_foot_position(self, leg_id, phase, step_length, step_height, duty_factor, velocity):
+        """
+        Compute foot position for a single leg based on gait phase.
+
+        Args:
+            leg_id: Leg ID (0-5, internal indexing)
+            phase: Current phase of this leg [0, 1]
+            step_length: Step length in meters
+            step_height: Step height in meters
+            duty_factor: Fraction of cycle in stance phase
+            velocity: Twist message with linear and angular velocities
+
+        Returns:
+            np.array([x, y, z]): Foot position relative to base_link
+        """
+        # Get home position for this leg
+        home_pos = self.leg_home_positions[leg_id].copy()
+
+        # Calculate step direction from velocity
+        vx = velocity.linear.x
+        vy = velocity.linear.y
+
+        # Step direction (normalized)
+        step_direction = np.array([vx, vy, 0.0])
+        step_mag = np.linalg.norm(step_direction[:2])
+
+        if step_mag > 1e-6:
+            step_direction[:2] /= step_mag
+        else:
+            # No movement - stay at home position
+            return home_pos
+
+        # Determine if leg is in stance or swing phase
+        if phase < duty_factor:
+            # STANCE PHASE: Foot moves backward relative to body
+            # Phase within stance: [0, 1]
+            stance_phase = phase / duty_factor
+
+            # Move from front to back of step
+            offset = step_direction * step_length * (0.5 - stance_phase)
+            foot_pos = home_pos + offset
+            foot_pos[2] = home_pos[2]  # Ground contact
+
+        else:
+            # SWING PHASE: Foot lifts and moves forward
+            # Phase within swing: [0, 1]
+            swing_phase = (phase - duty_factor) / (1.0 - duty_factor)
+
+            # Move from back to front of step
+            offset = step_direction * step_length * (-0.5 + swing_phase)
+            foot_pos = home_pos + offset
+
+            # Parabolic arc for Z (lift foot)
+            # Peaks at middle of swing (swing_phase = 0.5)
+            z_lift = step_height * 4 * swing_phase * (1 - swing_phase)
+            foot_pos[2] = home_pos[2] + z_lift
+
+        return foot_pos
+
     def publish_gait(self):
-        """OUTPUT: Publish gait parameters and body velocity - 10 Hz"""
+        """OUTPUT: Publish gait parameters, body velocity, and foot setpoints - 10 Hz"""
         # Filter velocity
         self._filter_velocity()
-        
+
         # Calculate velocity magnitude
-        vel_mag = np.sqrt(self.filtered_velocity.linear.x**2 + 
+        vel_mag = np.sqrt(self.filtered_velocity.linear.x**2 +
                          self.filtered_velocity.linear.y**2)
-        
+
         # Select gait type
         self.current_gait_type = self._select_gait_type(vel_mag)
         gait_config = self.gait_configs[self.current_gait_type]
-        
+
         # Calculate cycle time (slower for slower velocities)
         if vel_mag > 0.01:
             cycle_time = np.clip(1.0 / vel_mag, self.min_cycle_time, self.max_cycle_time)
         else:
             cycle_time = self.max_cycle_time
-        
+
         # Calculate step parameters
         step_length = self._calculate_step_length(self.filtered_velocity, cycle_time)
         duty_factor = gait_config['duty_factor']
-        
+
+        # Update gait phase
+        self.gait_phase += self.dt / cycle_time
+        if self.gait_phase >= 1.0:
+            self.gait_phase -= 1.0
+
         # Publish gait parameters
         gait_msg = Float64MultiArray()
         gait_msg.data = [
@@ -199,13 +290,38 @@ class GaitPlanner(Node):
             float(duty_factor)
         ]
         self.gait_params_pub.publish(gait_msg)
-        
+
         # Publish filtered body velocity
         self.body_vel_pub.publish(self.filtered_velocity)
-        
+
+        # Compute and publish foot setpoints for each leg
+        for leg_id in range(6):
+            # Get phase offset for this leg based on gait pattern
+            phase_offset = self._get_leg_phase_offset(leg_id + 1, self.current_gait_type)
+
+            # Calculate current phase for this leg
+            leg_phase = (self.gait_phase + phase_offset) % 1.0
+            self.leg_phases[leg_id] = leg_phase
+
+            # Compute foot position
+            foot_pos = self._compute_foot_position(
+                leg_id, leg_phase, step_length, self.step_height,
+                duty_factor, self.filtered_velocity
+            )
+
+            # Publish setpoint
+            setpoint_msg = PointStamped()
+            setpoint_msg.header.stamp = self.get_clock().now().to_msg()
+            setpoint_msg.header.frame_id = 'base_link'
+            setpoint_msg.point.x = float(foot_pos[0])
+            setpoint_msg.point.y = float(foot_pos[1])
+            setpoint_msg.point.z = float(foot_pos[2])
+            self.setpoint_pubs[leg_id].publish(setpoint_msg)
+
         self.get_logger().debug(
             f'Gait: {gait_config["name"]}, step_length: {step_length:.3f}, '
-            f'cycle_time: {cycle_time:.3f}, duty_factor: {duty_factor:.3f}'
+            f'cycle_time: {cycle_time:.3f}, duty_factor: {duty_factor:.3f}, '
+            f'phase: {self.gait_phase:.3f}'
         )
     
 def main(args=None):
