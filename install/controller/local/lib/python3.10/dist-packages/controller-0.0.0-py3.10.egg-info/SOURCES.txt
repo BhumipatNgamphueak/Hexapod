@@ -1,7 +1,0 @@
-setup.py
-controller/__init__.py
-controller/dummy_module.py
-controller.egg-info/PKG-INFO
-controller.egg-info/SOURCES.txt
-controller.egg-info/dependency_links.txt
-controller.egg-info/top_level.txt

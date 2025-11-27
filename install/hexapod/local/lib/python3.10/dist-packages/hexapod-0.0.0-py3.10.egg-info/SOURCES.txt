@@ -1,7 +1,0 @@
-setup.py
-hexapod/__init__.py
-hexapod/dummy_module.py
-hexapod.egg-info/PKG-INFO
-hexapod.egg-info/SOURCES.txt
-hexapod.egg-info/dependency_links.txt
-hexapod.egg-info/top_level.txt

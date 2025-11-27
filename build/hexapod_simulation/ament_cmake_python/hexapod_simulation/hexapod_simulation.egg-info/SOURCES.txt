@@ -1,7 +1,0 @@
-setup.py
-hexapod_simulation/__init__.py
-hexapod_simulation/dummy_module.py
-hexapod_simulation.egg-info/PKG-INFO
-hexapod_simulation.egg-info/SOURCES.txt
-hexapod_simulation.egg-info/dependency_links.txt
-hexapod_simulation.egg-info/top_level.txt

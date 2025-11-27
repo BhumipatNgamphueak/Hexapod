@@ -1,4 +1,0 @@
-Invoking command in '/home/ambushee/FRA333_Kinematic_Project/build/controller': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/humble /usr/bin/cmake --build /home/ambushee/FRA333_Kinematic_Project/build/controller -- -j16 -l16
-Invoked command in '/home/ambushee/FRA333_Kinematic_Project/build/controller' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/humble /usr/bin/cmake --build /home/ambushee/FRA333_Kinematic_Project/build/controller -- -j16 -l16
-Invoking command in '/home/ambushee/FRA333_Kinematic_Project/build/controller': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/humble /usr/bin/cmake --install /home/ambushee/FRA333_Kinematic_Project/build/controller
-Invoked command in '/home/ambushee/FRA333_Kinematic_Project/build/controller' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/humble /usr/bin/cmake --install /home/ambushee/FRA333_Kinematic_Project/build/controller
