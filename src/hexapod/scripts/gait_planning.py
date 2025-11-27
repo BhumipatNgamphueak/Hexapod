@@ -154,15 +154,17 @@ class GaitPlanner(Node):
     
     def _get_leg_phase_offset(self, leg_id, gait_type):
         """Calculate phase offset for each leg based on gait pattern"""
-        # Leg arrangement (typical hexapod):
-        # Front: L1, R1
-        # Middle: L2, R2
-        # Rear: L3, R3
+        # Leg arrangement (hexagon - clockwise from right):
+        #        leg3
+        #   leg4    leg2
+        #        
+        #   leg5    leg1
+        #        leg6
         
         if gait_type == 0:  # Tripod gait
-            # Group 1: L1, R2, L3 (phase 0)
-            # Group 2: R1, L2, R3 (phase 0.5)
-            if leg_id in [1, 4, 5]:  # L1, R2, L3
+            # Group 1 (phase 0.0): Legs 1, 3, 5 (alternating pattern)
+            # Group 2 (phase 0.5): Legs 2, 4, 6 (alternating pattern)
+            if leg_id in [1, 3, 5]:
                 return 0.0
             else:
                 return 0.5
