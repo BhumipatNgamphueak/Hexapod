@@ -51,6 +51,16 @@ class InverseKinematics(Node):
         self.declare_parameter('foot_pointer_joint_y', -0.022156)
         self.declare_parameter('end_effector_joint_x', 0.0075528)
         self.declare_parameter('end_effector_joint_y', -0.00094278)
+        
+        # Hip attachment point (leg-specific!)
+        self.declare_parameter('hip_xyz_x', -1.2616e-05)
+        self.declare_parameter('hip_xyz_y', -0.095255)
+        self.declare_parameter('hip_xyz_z', 0.0)
+        
+        # Hip RPY orientation (leg-specific!)
+        self.declare_parameter('hip_rpy_roll', 0.0)
+        self.declare_parameter('hip_rpy_pitch', 0.0)
+        self.declare_parameter('hip_rpy_yaw', -1.5708)
 
         leg_id = self.get_parameter('leg_id').value
         self.use_numerical_ik = self.get_parameter('use_numerical_ik').value
@@ -81,10 +91,20 @@ class InverseKinematics(Node):
         self.L2 = np.linalg.norm(self.ankle_offset)
         self.L3 = np.linalg.norm(self.foot_offset)
 
-        # URDF RPY offsets
-        self.hip_rpy = np.array([0.0, 0.0, -1.5708])
+        # URDF RPY offsets (leg-specific hip orientation!)
+        self.hip_rpy = np.array([
+            self.get_parameter('hip_rpy_roll').value,
+            self.get_parameter('hip_rpy_pitch').value,
+            self.get_parameter('hip_rpy_yaw').value
+        ])
         self.knee_rpy = np.array([1.5708, 1.5708, 3.142])
-        self.hip_xyz = np.array([-1.2616e-05, -0.095255, 0.0])
+        
+        # Hip attachment point from parameters (leg-specific)
+        self.hip_xyz = np.array([
+            self.get_parameter('hip_xyz_x').value,
+            self.get_parameter('hip_xyz_y').value,
+            self.get_parameter('hip_xyz_z').value
+        ])
 
         # Subscribers & Publishers
         self.target_sub = self.create_subscription(
@@ -178,10 +198,10 @@ class InverseKinematics(Node):
         """Numerical IK with joint limit awareness"""
         # Initial guess (downward-pointing stance)
         # For leg to point down (negative Z), joints 2 and 3 should be negative
-        theta = np.array([0.0, -np.pi/4, -np.pi/4])  # Changed from [0, π/3, π/2]
+        theta = np.array([0.0, -np.pi/4, -np.pi/4])
         
-        max_iterations = 15
-        tolerance = 0.001
+        max_iterations = 30  # Increased from 15
+        tolerance = 0.0001  # Tightened from 0.001 (1mm -> 0.1mm)
         lambda_damping = 0.005
 
         for iteration in range(max_iterations):

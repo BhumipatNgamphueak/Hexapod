@@ -83,7 +83,7 @@ def generate_launch_description():
             'max_angular_z': 1.0,
             'step_height': 0.03,
             'step_length_scale': 0.05,
-            'cycle_time': 1.0,
+            'cycle_time': 2.0,  # Increased from 1.0 to slow down leg movement
         }],
         remappings=[
             ('cmd_vel', '/cmd_vel'),
@@ -121,12 +121,12 @@ def generate_launch_description():
     # Each leg's offset is oriented in its own direction based on hexagon geometry
     # Reduced to 0.18m radial distance for reachability
     leg_configs = {
-        1: {'attach': [-1.2616e-05, -0.095255, 0.0], 'offset': [0.0, -0.18, -0.05]},    # Back (0°)
-        2: {'attach': [0.082487, -0.047638, 0.0], 'offset': [0.156, -0.09, -0.05]},     # Back-right (60°)
-        3: {'attach': [0.082499, 0.047616, 0.0], 'offset': [0.156, 0.09, -0.05]},       # Front-right (120°)
-        4: {'attach': [1.2616e-05, 0.095255, 0.0], 'offset': [0.0, 0.18, -0.05]},       # Front (180°)
-        5: {'attach': [-0.082487, 0.047638, 0.0], 'offset': [-0.156, 0.09, -0.05]},     # Front-left (240°)
-        6: {'attach': [-0.082499, -0.047616, 0.0], 'offset': [-0.156, -0.09, -0.05]},   # Back-left (300°)
+        1: {'attach': [-1.2616e-05, -0.095255, 0.0], 'rpy': [0.0, 0.0, -1.5708], 'offset': [0.0, -0.18, -0.05]},    # Back (−90°)
+        2: {'attach': [0.082487, -0.047638, 0.0], 'rpy': [0.0, 0.0, -0.5236], 'offset': [0.156, -0.09, -0.05]},     # Back-right (−30°)
+        3: {'attach': [0.082499, 0.047616, 0.0], 'rpy': [0.0, 0.0, 0.5236], 'offset': [0.156, 0.09, -0.05]},        # Front-right (+30°)
+        4: {'attach': [1.2616e-05, 0.095255, 0.0], 'rpy': [0.0, 0.0, 1.5708], 'offset': [0.0, 0.18, -0.05]},        # Front (+90°)
+        5: {'attach': [-0.082487, 0.047638, 0.0], 'rpy': [0.0, 0.0, 2.618], 'offset': [-0.156, 0.09, -0.05]},       # Front-left (+150°)
+        6: {'attach': [-0.082499, -0.047616, 0.0], 'rpy': [0.0, 0.0, -2.618], 'offset': [-0.156, -0.09, -0.05]},    # Back-left (−150°)
     }
     
     all_leg_nodes = []  # Collect ALL leg nodes here
@@ -135,9 +135,12 @@ def generate_launch_description():
         
         leg_ns = f'hexapod/leg_{leg_id}'
         
-        # Calculate default position for this leg (attachment + offset)
+        # Get leg-specific configuration
         attach = leg_configs[leg_id]['attach']
         offset = leg_configs[leg_id]['offset']
+        rpy = leg_configs[leg_id]['rpy']
+        
+        # Calculate default position for this leg (attachment + offset)
         default_x = attach[0] + offset[0]
         default_y = attach[1] + offset[1]
         default_z = attach[2] + offset[2]
@@ -182,7 +185,7 @@ def generate_launch_description():
                     'leg_id': leg_id,
                     'use_sim_time': LaunchConfiguration('use_sim_time'),
                     'trajectory_rate': 100.0,
-                    'smoothing_alpha': 0.1,
+                    'smoothing_alpha': 0.05,  # Reduced from 0.1 for smoother tracking
                     'default_x': default_x,  # Leg-specific default position
                     'default_y': default_y,
                     'default_z': default_z,
@@ -211,8 +214,16 @@ def generate_launch_description():
                     'max_iterations': 15,
                     'tolerance': 0.001,
                     'use_numerical_ik': True,
-                    'enforce_joint_limits': True,  # NEW: Joint limit enforcement
-                    'clamp_to_limits': False,      # NEW: Reject invalid solutions
+                    'enforce_joint_limits': True,
+                    'clamp_to_limits': False,
+                    # Leg-specific hip attachment point
+                    'hip_xyz_x': attach[0],
+                    'hip_xyz_y': attach[1],
+                    'hip_xyz_z': attach[2],
+                    # Leg-specific hip orientation
+                    'hip_rpy_roll': rpy[0],
+                    'hip_rpy_pitch': rpy[1],
+                    'hip_rpy_yaw': rpy[2],
                 }],
                 remappings=[
                     ('joint_states', f'/hexapod/leg_{leg_id}/joint_states'),
@@ -332,9 +343,14 @@ def generate_launch_description():
                     'foot_pointer_joint_y': -0.022156,
                     'end_effector_joint_x': 0.0075528,
                     'end_effector_joint_y': -0.00094278,
-                    'hip_xyz_x': -1.2616e-05,
-                    'hip_xyz_y': -0.095255,
-                    'hip_xyz_z': 0.0,
+                    # Leg-specific hip attachment point
+                    'hip_xyz_x': attach[0],
+                    'hip_xyz_y': attach[1],
+                    'hip_xyz_z': attach[2],
+                    # Leg-specific hip orientation
+                    'hip_rpy_roll': rpy[0],
+                    'hip_rpy_pitch': rpy[1],
+                    'hip_rpy_yaw': rpy[2],
                 }],
                 remappings=[
                     ('joint_states', f'/hexapod/leg_{leg_id}/joint_states'),
