@@ -117,11 +117,30 @@ def generate_launch_description():
     # ALL LEGS START SIMULTANEOUSLY at 4.0s ✅
     # =================================================================
     
+    # Define leg attachment points and stance offsets (from URDF)
+    # Each leg's offset is oriented in its own direction based on hexagon geometry
+    # Increased distance from base_link (0.25m radial distance)
+    leg_configs = {
+        1: {'attach': [-1.2616e-05, -0.095255, 0.0], 'offset': [0.0, -0.25, -0.05]},    # Back (0°)
+        2: {'attach': [0.082487, -0.047638, 0.0], 'offset': [0.216, -0.125, -0.05]},    # Back-right (60°)
+        3: {'attach': [0.082499, 0.047616, 0.0], 'offset': [0.216, 0.125, -0.05]},      # Front-right (120°)
+        4: {'attach': [1.2616e-05, 0.095255, 0.0], 'offset': [0.0, 0.25, -0.05]},       # Front (180°)
+        5: {'attach': [-0.082487, 0.047638, 0.0], 'offset': [-0.216, 0.125, -0.05]},    # Front-left (240°)
+        6: {'attach': [-0.082499, -0.047616, 0.0], 'offset': [-0.216, -0.125, -0.05]},  # Back-left (300°)
+    }
+    
     all_leg_nodes = []  # Collect ALL leg nodes here
     
     for leg_id in range(1, 7):
         
         leg_ns = f'hexapod/leg_{leg_id}'
+        
+        # Calculate default position for this leg (attachment + offset)
+        attach = leg_configs[leg_id]['attach']
+        offset = leg_configs[leg_id]['offset']
+        default_x = attach[0] + offset[0]
+        default_y = attach[1] + offset[1]
+        default_z = attach[2] + offset[2]
         
         # -----------------------------------------------------------
         # Set Point Generator
@@ -136,9 +155,9 @@ def generate_launch_description():
                 parameters=[{
                     'leg_id': leg_id,
                     'use_sim_time': LaunchConfiguration('use_sim_time'),
-                    'stance_x': 0.15,
-                    'stance_y': 0.0,
-                    'stance_z': -0.05,
+                    'stance_offset_x': offset[0],  # Leg-specific stance offset
+                    'stance_offset_y': offset[1],
+                    'stance_offset_z': offset[2],
                     'update_rate': 50.0,
                 }],
                 remappings=[
@@ -162,13 +181,14 @@ def generate_launch_description():
                 parameters=[{
                     'leg_id': leg_id,
                     'use_sim_time': LaunchConfiguration('use_sim_time'),
-                    'interpolation_method': 'cubic',
                     'trajectory_rate': 100.0,
-                    'swing_clearance': 0.03,
+                    'smoothing_alpha': 0.1,
+                    'default_x': default_x,  # Leg-specific default position
+                    'default_y': default_y,
+                    'default_z': default_z,
                 }],
                 remappings=[
                     ('end_effector_setpoint', f'/hexapod/leg_{leg_id}/end_effector_setpoint'),
-                    ('phase_info', f'/hexapod/leg_{leg_id}/phase_info'),
                     ('end_effector_target', f'/hexapod/leg_{leg_id}/end_effector_target'),
                     ('end_effector_velocity', f'/hexapod/leg_{leg_id}/end_effector_velocity'),
                 ],

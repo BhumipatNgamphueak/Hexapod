@@ -55,7 +55,7 @@ class SetPointGeneratorFixed(Node):
         self.leg_phase = 0.0
         self.body_velocity = Twist()
         self.step_height = 0.03
-        self.step_length = 0.05
+        self.step_length = 0.1
         
         # Current position (in base_link frame)
         self.current_position = self.stance_position_base.copy()

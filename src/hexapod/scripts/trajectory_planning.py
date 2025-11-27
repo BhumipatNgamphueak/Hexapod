@@ -21,19 +21,28 @@ class TrajectoryGenerator(Node):
         self.declare_parameter('leg_id', 1)
         self.declare_parameter('trajectory_rate', 100.0)
         self.declare_parameter('smoothing_alpha', 0.1)  # Lower = smoother
+        self.declare_parameter('default_x', 0.15)  # Default stance position
+        self.declare_parameter('default_y', 0.0)
+        self.declare_parameter('default_z', -0.05)
         
         self.leg_id = self.get_parameter('leg_id').value
         trajectory_rate = self.get_parameter('trajectory_rate').value
         self.alpha = self.get_parameter('smoothing_alpha').value
         
+        # Default position (for initialization before first setpoint)
+        default_x = self.get_parameter('default_x').value
+        default_y = self.get_parameter('default_y').value
+        default_z = self.get_parameter('default_z').value
+        default_pos = np.array([default_x, default_y, default_z])
+        
         self.dt = 1.0 / trajectory_rate
         
-        # State variables
-        self.current_setpoint = np.array([0.0, 0.0, 0.0])
-        self.current_position = np.array([0.0, 0.0, 0.0])
+        # State variables - initialize with default position
+        self.current_setpoint = default_pos.copy()
+        self.current_position = default_pos.copy()
         self.current_velocity = np.array([0.0, 0.0, 0.0])
-        self.previous_position = np.array([0.0, 0.0, 0.0])
-        self.initialized = False
+        self.previous_position = default_pos.copy()
+        self.initialized = True  # Start initialized with default position
         
         # INPUT: Subscribers
         self.setpoint_sub = self.create_subscription(
@@ -50,7 +59,7 @@ class TrajectoryGenerator(Node):
         
         self.get_logger().info(
             f'Trajectory Generator (Exponential Smoothing) for leg {self.leg_id} initialized'
-            f' with alpha={self.alpha}'
+            f' with alpha={self.alpha}, default_pos={default_pos}'
         )
     
     def setpoint_callback(self, msg):
