@@ -83,9 +83,13 @@ class PositionPIDController(Node):
         self.target_sub = self.create_subscription(
             Float64MultiArray, 'joint_position_target', self.target_callback, 10)
 
-        # Publisher
+        # Publishers
         self.velocity_pub = self.create_publisher(
             Float64MultiArray, 'joint_velocity_target', 10)
+        
+        # NEW: Publish joint targets for logging
+        self.joint_targets_pub = self.create_publisher(
+            Float64MultiArray, 'joint_targets', 10)
 
         # Timer - 100 Hz
         self.timer = self.create_timer(self.dt, self.control_loop)
@@ -198,10 +202,22 @@ class PositionPIDController(Node):
         # Update previous error
         self.previous_error = error.copy()
 
-        # Publish
+        # Publish velocity command
         msg = Float64MultiArray()
         msg.data = [float(v) for v in velocity_command]
         self.velocity_pub.publish(msg)
+        
+        # NEW: Publish joint targets for logging (position + velocity)
+        target_msg = Float64MultiArray()
+        target_msg.data = [
+            float(self.target_position[0]),
+            float(self.target_position[1]),
+            float(self.target_position[2]),
+            float(velocity_command[0]),
+            float(velocity_command[1]),
+            float(velocity_command[2])
+        ]
+        self.joint_targets_pub.publish(target_msg)
 
 
 def main(args=None):

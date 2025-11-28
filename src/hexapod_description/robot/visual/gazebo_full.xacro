@@ -231,8 +231,34 @@
   </ros2_control>
 
   <gazebo>
+    <!-- ros2_control Plugin -->
     <plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
       <parameters>$(find hexapod_simulation)/config/controller_full.yaml</parameters>
+    </plugin>
+
+    <!-- ========================================== -->
+    <!-- ODOMETRY PUBLISHER - For base_link velocity -->
+    <!-- ========================================== -->
+    <plugin filename="libignition-gazebo-odometry-publisher-system.so"
+            name="ignition::gazebo::systems::OdometryPublisher">
+      <odom_frame>odom</odom_frame>
+      <robot_base_frame>base_link</robot_base_frame>
+      <odom_publish_frequency>100</odom_publish_frequency>
+      <odom_topic>/model/hexapod/odometry</odom_topic>
+      <tf_topic>/model/hexapod/tf</tf_topic>
+    </plugin>
+
+    <!-- ========================================== -->
+    <!-- POSE PUBLISHER - For TF transforms -->
+    <!-- ========================================== -->
+    <plugin filename="libignition-gazebo-pose-publisher-system.so"
+            name="ignition::gazebo::systems::PosePublisher">
+      <publish_link_pose>true</publish_link_pose>
+      <publish_collision_pose>false</publish_collision_pose>
+      <publish_visual_pose>false</publish_visual_pose>
+      <publish_nested_model_pose>true</publish_nested_model_pose>
+      <use_pose_vector_msg>true</use_pose_vector_msg>
+      <update_frequency>100</update_frequency>
     </plugin>
 
     <!-- Sensor Manager (for IMU, Lidar, etc.) -->
@@ -243,7 +269,9 @@
   </gazebo>
 
   <!-- Optional IMU sensor on base_link -->
-  <!-- <gazebo reference="base_link">
+  <!-- Uncomment if you need IMU data -->
+  <!-- 
+  <gazebo reference="base_link">
     <sensor name="imu_sensor" type="imu">
       <always_on>true</always_on>
       <update_rate>100.0</update_rate>
@@ -254,6 +282,7 @@
               name="ignition::gazebo::systems::Imu"/>
       <pose>0 0 0 0 0 0</pose>
     </sensor>
-  </gazebo> -->
+  </gazebo>
+  -->
 
 </robot>

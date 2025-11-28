@@ -44,6 +44,11 @@ class ForwardKinematics(Node):
         self.declare_parameter('hip_xyz_x', -1.2616e-05)
         self.declare_parameter('hip_xyz_y', -0.095255)
         self.declare_parameter('hip_xyz_z', 0.0)
+        
+        # Hip RPY orientation (leg-specific!)
+        self.declare_parameter('hip_rpy_roll', 0.0)
+        self.declare_parameter('hip_rpy_pitch', 0.0)
+        self.declare_parameter('hip_rpy_yaw', -1.5708)
 
         update_rate = self.get_parameter('update_rate').value
         leg_id = self.get_parameter('leg_id').value
@@ -74,7 +79,11 @@ class ForwardKinematics(Node):
             self.get_parameter('hip_xyz_y').value,
             self.get_parameter('hip_xyz_z').value
         ])
-        self.hip_rpy = np.array([0.0, 0.0, -1.5708])  # From URDF
+        self.hip_rpy = np.array([
+            self.get_parameter('hip_rpy_roll').value,
+            self.get_parameter('hip_rpy_pitch').value,
+            self.get_parameter('hip_rpy_yaw').value
+        ])
 
         # Store joint angles [hip, knee, ankle]
         self.joint_angles = np.zeros(3)

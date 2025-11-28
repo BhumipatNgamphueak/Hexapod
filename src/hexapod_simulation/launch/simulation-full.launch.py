@@ -143,16 +143,28 @@ def generate_launch_description():
         parameters=[{'use_sim_time': use_sim_time}]
     )
 
-    # ROS <-> Gazebo bridge
+    # ========================================
+    # ROS <-> Gazebo bridge - WITH ODOMETRY
+    # ========================================
     bridge = Node(
         package='ros_gz_bridge', 
         executable='parameter_bridge', 
         output='screen',
         arguments=[
+            # Clock
             '/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock',
+            # Odometry (position + velocity)
+            '/model/hexapod/odometry@nav_msgs/msg/Odometry[gz.msgs.Odometry',
+            # TF transforms
+            '/model/hexapod/tf@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V',
+            # IMU (if enabled)
             '/imu/data@sensor_msgs/msg/Imu[gz.msgs.IMU'
         ],
-        parameters=[{'use_sim_time': use_sim_time}]
+        parameters=[{'use_sim_time': use_sim_time}],
+        remappings=[
+            # Map model TF to standard /tf topic
+            ('/model/hexapod/tf', '/tf'),
+        ]
     )
 
     # RViz
@@ -177,7 +189,7 @@ def generate_launch_description():
         gz_sim,
         state_pub,
         spawn_entity,
-        bridge,
+        bridge,  # Bridge now includes odometry!
         # After spawning the robot, start the joint_state_broadcaster
         RegisterEventHandler(
             event_handler=OnProcessExit(

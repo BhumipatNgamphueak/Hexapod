@@ -114,19 +114,23 @@ class StateMachine(Node):
         """
         Calculate phase offset for each leg based on gait pattern
         
-        Leg arrangement (standard hexapod):
-          Front:  L1(1)  R1(2)
-          Middle: L2(3)  R2(4)
-          Rear:   L3(5)  R3(6)
+        Leg arrangement (hexagon - clockwise from right):
+               leg3
+          leg4    leg2
+               
+          leg5    leg1
+               leg6
+        
+        Forward direction: →
         
         Returns: Phase offset in [0, 1)
         """
         
         if gait_type == 0:  # Tripod gait
             # Two groups alternate (most stable, fastest)
-            # Group 1 (phase 0.0): L1, R2, L3 → Legs 1, 4, 5
-            # Group 2 (phase 0.5): R1, L2, R3 → Legs 2, 3, 6
-            if leg_id in [1, 4, 5]:
+            # Group 1 (phase 0.0): Legs 1, 3, 5 (alternating pattern)
+            # Group 2 (phase 0.5): Legs 2, 4, 6 (alternating pattern)
+            if leg_id in [1, 3, 5]:
                 return 0.0
             else:
                 return 0.5

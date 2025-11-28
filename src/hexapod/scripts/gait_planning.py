@@ -31,6 +31,11 @@ class GaitPlanner(Node):
         self.declare_parameter('num_legs', 6)
         self.declare_parameter('num_waypoints', 8)
         
+        # Default cmd_vel values (when no external command is received)
+        self.declare_parameter('default_linear_x', 0.0)
+        self.declare_parameter('default_linear_y', 0.0)
+        self.declare_parameter('default_angular_z', 0.0)
+        
         # Get parameters
         self.default_gait = self.get_parameter('default_gait_type').value
         self.max_linear_x = self.get_parameter('max_linear_x').value
@@ -43,8 +48,16 @@ class GaitPlanner(Node):
         self.num_legs = self.get_parameter('num_legs').value
         self.num_waypoints = self.get_parameter('num_waypoints').value
         
-        # State variables
+        # Get default cmd_vel values
+        default_linear_x = self.get_parameter('default_linear_x').value
+        default_linear_y = self.get_parameter('default_linear_y').value
+        default_angular_z = self.get_parameter('default_angular_z').value
+        
+        # State variables - initialize with default velocity
         self.current_cmd_vel = Twist()
+        self.current_cmd_vel.linear.x = default_linear_x
+        self.current_cmd_vel.linear.y = default_linear_y
+        self.current_cmd_vel.angular.z = default_angular_z
         self.filtered_velocity = Twist()
         self.current_gait_type = self.default_gait
         self.gait_phase = 0.0  # Phase tracker [0, 1]
@@ -141,15 +154,17 @@ class GaitPlanner(Node):
     
     def _get_leg_phase_offset(self, leg_id, gait_type):
         """Calculate phase offset for each leg based on gait pattern"""
-        # Leg arrangement (typical hexapod):
-        # Front: L1, R1
-        # Middle: L2, R2
-        # Rear: L3, R3
+        # Leg arrangement (hexagon - clockwise from right):
+        #        leg3
+        #   leg4    leg2
+        #        
+        #   leg5    leg1
+        #        leg6
         
         if gait_type == 0:  # Tripod gait
-            # Group 1: L1, R2, L3 (phase 0)
-            # Group 2: R1, L2, R3 (phase 0.5)
-            if leg_id in [1, 4, 5]:  # L1, R2, L3
+            # Group 1 (phase 0.0): Legs 1, 3, 5 (alternating pattern)
+            # Group 2 (phase 0.5): Legs 2, 4, 6 (alternating pattern)
+            if leg_id in [1, 3, 5]:
                 return 0.0
             else:
                 return 0.5
