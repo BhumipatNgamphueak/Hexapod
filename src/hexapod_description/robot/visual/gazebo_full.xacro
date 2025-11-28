@@ -240,6 +240,16 @@
             name="ignition::gazebo::systems::Sensors">
       <render_engine>ogre2</render_engine>
     </plugin>
+
+    <!-- Pose Publisher: Publishes world->base_link transform to TF -->
+    <!-- This ensures Gazebo's world frame matches RViz's world frame -->
+    <plugin filename="libignition-gazebo-pose-publisher-system.so"
+            name="ignition::gazebo::systems::PosePublisher">
+      <publish_link_pose>true</publish_link_pose>
+      <use_pose_vector_msg>false</use_pose_vector_msg>
+      <static_publisher>false</static_publisher>
+      <static_update_frequency>100.0</static_update_frequency>
+    </plugin>
   </gazebo>
 
   <!-- Optional IMU sensor on base_link -->
