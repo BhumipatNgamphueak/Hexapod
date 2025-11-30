@@ -35,9 +35,9 @@ def generate_launch_description():
     )
     
     nodes_to_launch = []
-    
+
     # =================================================================
-    # CRITICAL: Joint State Splitter FIRST at 2s
+    # CRITICAL: Joint State Splitter at 2s
     # =================================================================
     
     joint_splitter = Node(
@@ -81,11 +81,11 @@ def generate_launch_description():
             'max_linear_x': 2.0,
             'max_linear_y': 0.2,
             'max_angular_z': 1.0,
-            'step_height': 0.03,
-            'step_length_scale': 0.5,  # Increased from 0.05 to make feet step further
-            'cycle_time': 20.0,  # Increased to slow down leg movement
-            # Default cmd_vel values (robot will walk forward at startup)
-            'default_linear_x': 0.1,  # 0.1 m/s forward
+            'step_height': 0.02,  # Reduced from 0.03 to 0.02 (lower foot lift = more stable)
+            'step_length_scale': 0.3,  # Reduced from 0.5 to 0.3 (shorter steps = less sway)
+            'cycle_time': 2.0,  # Reduced from 20.0 to 2.0 (faster gait cycle = better balance)
+            # Default cmd_vel values (robot will NOT move until commanded)
+            'default_linear_x': 0.0,  # 0.0 m/s - wait for command
             'default_linear_y': 0.0,
             'default_angular_z': 0.0,
         }],
@@ -251,7 +251,7 @@ def generate_launch_description():
                     'leg_id': leg_id,
                     'use_sim_time': LaunchConfiguration('use_sim_time'),
                     'update_rate': 100.0,
-                    'damping_factor': 0.01,
+                    'damping_factor': 0.05,  # Increased from 0.01 to reduce oscillation near singularities
                 }],
                 remappings=[
                     ('joint_states', f'/hexapod/leg_{leg_id}/joint_states'),

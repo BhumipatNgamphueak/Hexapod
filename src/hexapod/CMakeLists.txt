@@ -28,6 +28,7 @@ ament_python_install_package(${PROJECT_NAME})
 # Install Python executables
 install(PROGRAMS
   scripts/data_logger.py
+  scripts/fk_pdf_model.py
   scripts/forward_position_kinematic.py
   scripts/gait_planning.py
   scripts/inverse_position_kinematic.py

@@ -54,11 +54,18 @@ class SetPointGeneratorFixed(Node):
         self.progress = 0.0
         self.leg_phase = 0.0
         self.body_velocity = Twist()
-        self.step_height = 0.3
-        self.step_length = 1.0
-        
+        self.step_height = 0.03
+        self.step_length = 0.05
+        self.cycle_time = 1.0  # Will be updated from gait_parameters
+        self.duty_factor = 0.5  # Will be updated from gait_parameters
+
         # Current position (in base_link frame)
         self.current_position = self.stance_position_base.copy()
+
+        # Virtual world position tracking (for stance phase locking)
+        self.world_foot_position = np.zeros(3)  # Foot position in virtual world frame
+        self.world_body_position = np.zeros(3)  # Body position in virtual world frame
+        self.stance_started = False  # Track when stance phase starts
         
         # INPUT: Subscribers
         self.phase_sub = self.create_subscription(
@@ -114,29 +121,33 @@ class SetPointGeneratorFixed(Node):
     
     def gait_params_callback(self, msg):
         """INPUT: Receive gait parameters [gait_type, step_height, step_length, cycle_time, duty_factor]"""
-        if len(msg.data) >= 3:
+        if len(msg.data) >= 5:
             self.step_height = float(msg.data[1])
             self.step_length = float(msg.data[2])
+            self.cycle_time = float(msg.data[3])
+            self.duty_factor = float(msg.data[4])
     
-    def _generate_stance_position(self, progress):
+    def _generate_stance_position(self, progress, dt=0.02):
         """
-        Generate position during stance phase (foot on ground, moving backward relative to body)
-        All positions in base_link frame
+        Generate position during stance phase - SIMPLIFIED NO COMPENSATION
+        Foot moves linearly from front to back in base_link frame
+        Physics will handle body motion when foot contacts ground
         """
-        # Stance: foot moves from front to back (opposite to body forward motion)
-        # Progress 0 -> 1: move from +step_length/2 to -step_length/2
-        
-        # Start at front position
+        # Stance: foot moves from front position to back position
+        # This creates the "pushing" motion that propels the robot forward
+
+        # Front position (where stance starts - forward of stance position)
         front_pos = self.stance_position_base.copy()
         front_pos[0] += self.step_length / 2.0
-        
-        # Move to back position
+
+        # Back position (where stance ends - backward of stance position)
         back_pos = self.stance_position_base.copy()
         back_pos[0] -= self.step_length / 2.0
-        
-        # Interpolate based on progress
+
+        # Linear interpolation from front to back based on progress
+        # As foot moves backward in base_link frame, it pushes body forward
         position = front_pos + progress * (back_pos - front_pos)
-        
+
         return position
     
     def _generate_swing_position(self, progress):
@@ -173,10 +184,11 @@ class SetPointGeneratorFixed(Node):
         """OUTPUT: Generate setpoint based on phase (in base_link frame) - 50 Hz"""
         # Generate position based on phase type
         if self.phase_type == 0:  # Stance
-            position = self._generate_stance_position(self.progress)
+            position = self._generate_stance_position(self.progress, dt=0.02)  # 50 Hz = 0.02s
         else:  # Swing
+            self.stance_started = False  # Reset for next stance phase
             position = self._generate_swing_position(self.progress)
-        
+
         self.current_position = position
         
         # Publish setpoint (FIXED: base_link frame)

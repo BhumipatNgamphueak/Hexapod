@@ -153,7 +153,7 @@ class StateMachine(Node):
         
         else:
             self.get_logger().warn(f'Unknown gait type: {gait_type}, using tripod')
-            return 0.0 if leg_id in [1, 4, 5] else 0.5
+            return 0.0 if leg_id in [1, 3, 5] else 0.5
     
     def _calculate_phase_type(self, leg_phase, duty_factor):
         """Determine if leg is in stance (0) or swing (1) phase"""

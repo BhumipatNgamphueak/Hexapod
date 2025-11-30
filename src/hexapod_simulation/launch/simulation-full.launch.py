@@ -60,16 +60,14 @@ def generate_launch_description():
     )
 
     # Robot state publisher
-    # This publishes the static transforms from the URDF (world->base_link and all joint transforms)
     state_pub = Node(
-        package='robot_state_publisher', 
+        package='robot_state_publisher',
         executable='robot_state_publisher',
-        name='robot_state_publisher', 
+        name='robot_state_publisher',
         output='screen',
         parameters=[
             {'robot_description': robot_description_param},
-            {'use_sim_time': use_sim_time},
-            {'publish_frequency': 100.0}  # Publish at 100 Hz for smooth visualization
+            {'use_sim_time': use_sim_time}
         ]
     )
 
@@ -147,13 +145,12 @@ def generate_launch_description():
 
     # ROS <-> Gazebo bridge
     bridge = Node(
-        package='ros_gz_bridge', 
-        executable='parameter_bridge', 
+        package='ros_gz_bridge',
+        executable='parameter_bridge',
         output='screen',
         arguments=[
             '/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock',
-            '/imu/data@sensor_msgs/msg/Imu[gz.msgs.IMU',
-            '/model/hexapod/pose@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V'
+            '/imu/data@sensor_msgs/msg/Imu[gz.msgs.IMU'
         ],
         parameters=[{'use_sim_time': use_sim_time}]
     )

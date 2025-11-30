@@ -6,21 +6,6 @@
     <xacro:include filename="$(find hexapod_description)/robot/visual/robot_material.xacro" />
     <xacro:include filename="$(find hexapod_description)/robot/visual/gazebo_full.xacro" />
 
-    <!-- WORLD FRAME -->
-    <!-- This is the fixed reference frame for both Gazebo and RViz -->
-    <link name="world"/>
-
-    <!-- WORLD TO BASE_LINK JOINT -->
-    <!-- This joint defines the position of the hexapod relative to the world frame -->
-    <!-- In Gazebo, this will be automatically handled by physics, but we define it here -->
-    <!-- for proper TF tree structure in RViz -->
-    <joint name="world_to_base" type="fixed">
-        <parent link="world"/>
-        <child link="base_link"/>
-        <!-- Robot frame is 2m below world frame (world is 2m above robot) -->
-        <origin xyz="5.0 0.0 0.0" rpy="0 0 0"/>
-    </joint>
-
     <!-- BASE LINK -->
     <link name="base_link">
         <inertial>
