@@ -1,219 +1,378 @@
-# Hexapod Control System - Node Architecture Summary
+# Hexapod Robot Control System
 
-## System Overview
-This is a hierarchical control system for a 6-legged hexapod robot with **10 nodes total**:
-- **3 Global Nodes** - coordinate all legs
-- **7 Per-Leg Nodes** × 6 legs = **42 nodes** (only 1 per leg for now)
+## 🤖 Overview
+A complete hierarchical control system for a 6-legged hexapod robot with **ROS2** and **Gazebo** simulation.
+
+**Status**: ✅ **Fully Functional** - Robot walks successfully with stable tripod gait
 
 ---
 
-## Data Flow Diagram
+## 📊 System Architecture
+
+### Node Structure
+- **3 Global Nodes** - Coordinate all legs
+- **7 Per-Leg Nodes** × 6 legs = **42 nodes**
+- **Total**: 45 nodes running simultaneously
+
+### Control Frequencies
+- **Planning**: 10 Hz (Gait selection)
+- **Coordination**: 50 Hz (Phase management, setpoint generation)
+- **Control**: 100 Hz (IK, PID, trajectory)
+
+---
+
+## 🔄 Data Flow
 
 ```
-/cmd_vel (User Input)
+User Input (/cmd_vel)
     ↓
 [Gait Planner] (10 Hz)
     ↓ gait_parameters, body_velocity
-    ↓
 [State Machine] (50 Hz)
-    ↓ phase_info (6 topics, one per leg)
-    ↓
-    ├─→ [Set Point Gen - Leg 1] (50 Hz) ──→ setpoint ──→ [Trajectory - Leg 1] (100 Hz)
-    ├─→ [Set Point Gen - Leg 2] (50 Hz) ──→ setpoint ──→ [Trajectory - Leg 2] (100 Hz)
-    ├─→ [Set Point Gen - Leg 3] (50 Hz) ──→ setpoint ──→ [Trajectory - Leg 3] (100 Hz)
-    ├─→ [Set Point Gen - Leg 4] (50 Hz) ──→ setpoint ──→ [Trajectory - Leg 4] (100 Hz)
-    ├─→ [Set Point Gen - Leg 5] (50 Hz) ──→ setpoint ──→ [Trajectory - Leg 5] (100 Hz)
-    └─→ [Set Point Gen - Leg 6] (50 Hz) ──→ setpoint ──→ [Trajectory - Leg 6] (100 Hz)
-
-For each leg:
-    target_position → [IK] → joint_target → [Position PID] → velocity_target
-                                                                      ↓
-    target_velocity → [IVK] → velocity_feedforward ─────────→ [Velocity PID] → effort
-                                                                      ↑
-    joint_states ────────────────────────────────────────────────────┘
+    ↓ phase_info (per leg)
+[Set Point Generator] (50 Hz)
+    ↓ end_effector_setpoint
+[Trajectory Generator] (100 Hz)
+    ↓ target + velocity
+    ├─→ [IK] ──→ joint_position_target ──→ [Position PID] ──┐
+    └─→ [IVK] ─→ velocity_feedforward ─────────────────────┤
+                                                            ↓
+                                            [Velocity PID] ──→ effort ──→ Gazebo
 ```
 
 ---
 
-## Global Nodes (3 nodes)
+## 📁 Node Details
 
-### 1. Gait Planner
-**File**: `gait_planning.py`  
-**Frequency**: 10 Hz  
-**Input**: 
-- `/cmd_vel` (Twist) - velocity commands from teleop/navigation
-**Output**:
-- `/hexapod/gait_parameters` (Float64MultiArray) - [gait_type, step_height, step_length, cycle_time, duty_factor]
-- `/hexapod/body_velocity` (Twist) - filtered/clipped velocity
-**Function**: Selects gait pattern based on velocity and calculates step parameters
+### Global Nodes
 
-### 2. State Machine
-**File**: `state_controller.py`  
-**Frequency**: 50 Hz  
-**Input**:
-- `/hexapod/gait_parameters` (Float64MultiArray)
-- `/hexapod/body_velocity` (Twist)
-**Output**:
-- `/hexapod/leg_{1-6}/phase_info` (Float64MultiArray) - [phase_type, progress, leg_phase]
-**Function**: Tracks gait cycle time and generates phase information for each leg (stance/swing)
+#### 1. Gait Planner (`gait_planning.py`)
+- **Frequency**: 10 Hz
+- **Input**: `/cmd_vel` (user velocity commands)
+- **Output**:
+  - `/hexapod/gait_parameters` - [gait_type, step_height, step_length, cycle_time, duty_factor]
+  - `/hexapod/body_velocity` - filtered velocity
+- **Function**: Selects gait pattern (tripod/wave/ripple) based on velocity
 
-### 3. Joint State Splitter
-**File**: `joint_state_splitter.py`  
-**Frequency**: Callback-based  
-**Input**:
-- `/joint_states` (JointState) - all joints from Gazebo
-**Output**:
-- `/hexapod/leg_{1-6}/joint_states` (JointState) - filtered per leg
-**Function**: Distributes global joint states to individual legs
+#### 2. State Controller (`state_controller.py`)
+- **Frequency**: 50 Hz
+- **Input**: `gait_parameters`, `body_velocity`
+- **Output**: `/hexapod/leg_{1-6}/phase_info` - [phase_type, progress, leg_phase]
+- **Function**: Manages gait cycle and calculates phase for each leg
+- **✅ Fixed**: Corrected tripod gait pattern (legs 1,3,5 and 2,4,6)
+
+#### 3. Joint State Splitter (`joint_state_splitter.py`)
+- **Frequency**: Callback-based
+- **Input**: `/joint_states` (all joints from Gazebo)
+- **Output**: `/hexapod/leg_{1-6}/joint_states` (per leg)
+- **Function**: Distributes global joint states to individual legs
 
 ---
 
-## Per-Leg Nodes (7 nodes × 6 legs = 42 nodes)
+### Per-Leg Nodes (7 nodes × 6 legs)
 
-Each leg has its own instance of these 7 nodes:
+#### 4. Set Point Generator (`set_point.py`)
+- **Frequency**: 50 Hz
+- **Input**: `phase_info`, `body_velocity`
+- **Output**: `end_effector_setpoint` (discrete foot waypoints)
+- **Function**: Generates swing/stance trajectory waypoints
 
-### 4. Set Point Generator
-**File**: `set_point.py`  
-**Frequency**: 50 Hz  
-**Input**:
-- `/hexapod/leg_X/phase_info` (Float64MultiArray) - swing/stance phase
-- `/hexapod/body_velocity` (Twist) - for step length calculation
-**Output**:
-- `/hexapod/leg_X/end_effector_setpoint` (PointStamped) - discrete foot position
-**Function**: Generates discrete waypoints for swing and stance trajectories
+#### 5. Trajectory Generator (`trajectory_planning.py`)
+- **Frequency**: 100 Hz
+- **Input**: `end_effector_setpoint`
+- **Output**:
+  - `end_effector_target` (smooth position)
+  - `end_effector_velocity` (for feedforward)
+- **Function**: Cubic spline interpolation for smooth motion
 
-### 5. Trajectory Generator
-**File**: `trajectory_planning.py`  
-**Frequency**: 100 Hz  
-**Input**:
-- `/hexapod/leg_X/end_effector_setpoint` (PointStamped) - discrete waypoints
-- `/hexapod/leg_X/phase_info` (Float64MultiArray) - for interpolation timing
-**Output**:
-- `/hexapod/leg_X/end_effector_target` (PointStamped) - smooth interpolated position
-- `/hexapod/leg_X/end_effector_velocity` (Vector3Stamped) - velocity for feedforward
-**Function**: Smoothly interpolates between setpoints using cubic/quintic splines
+#### 6. Inverse Position Kinematics (`inverse_position_kinematic.py`)
+- **Frequency**: Callback-based
+- **Model**: **PDF model with URDF offset correction**
+- **Input**: `end_effector_target`
+- **Output**: `joint_position_target`
+- **Function**: Analytical IK solution (geometric approach)
+- **✅ Includes**: PDF_TO_URDF_OFFSET = [0.18, -0.1985, 0.1399]
 
-### 6. Inverse Position Kinematics
-**File**: `inverse_position_kinematic.py`  
-**Frequency**: Callback-based (triggered by target)  
-**Input**:
-- `/hexapod/leg_X/end_effector_target` (PointStamped) - desired foot position
-- `/hexapod/leg_X/joint_states` (JointState) - for seed values
-**Output**:
-- `/hexapod/leg_X/joint_position_target` (Float64MultiArray) - target joint angles
-**Function**: Converts Cartesian foot position to joint angles (analytical solution)
+#### 7. Inverse Velocity Kinematics (`inverse_velocity_kinematic.py`)
+- **Frequency**: 100 Hz
+- **Model**: **PDF Jacobian (numerical differentiation)**
+- **Input**: `end_effector_velocity`, `joint_states`
+- **Output**: `joint_velocity_feedforward`
+- **Function**: Damped least squares Jacobian inverse
+- **✅ Fixed**: Added proper mathematical explanation for offset handling
+- **Damping**: 0.05 (increased from 0.01 for stability)
 
-### 7. Inverse Velocity Kinematics
-**File**: `inverse_velocity_kinematic.py`  
-**Frequency**: 100 Hz  
-**Input**:
-- `/hexapod/leg_X/end_effector_velocity` (Vector3Stamped) - desired foot velocity
-- `/hexapod/leg_X/joint_states` (JointState) - current joints for Jacobian
-**Output**:
-- `/hexapod/leg_X/joint_velocity_feedforward` (Float64MultiArray) - joint velocities
-**Function**: Maps Cartesian velocity to joint velocities using Jacobian (damped least squares)
+#### 8. Position PID Controller (`pid_position_controller.py`)
+- **Frequency**: 100 Hz
+- **Input**: `joint_states`, `joint_position_target`
+- **Output**: `joint_velocity_target`
+- **Function**: Position control with angle wrap-around
+- **Features**:
+  - Angle wrap-around for error computation
+  - Joint limit enforcement
+  - Anti-windup with limit awareness
 
-### 8. Position PID Controller
-**File**: `pid_position_controller.py`  
-**Frequency**: 100 Hz  
-**Input**:
-- `/hexapod/leg_X/joint_states` (JointState) - current joint positions
-- `/hexapod/leg_X/joint_position_target` (Float64MultiArray) - target positions from IK
-**Output**:
-- `/hexapod/leg_X/joint_velocity_target` (Float64MultiArray) - velocity commands
-**Function**: Position control loop with PID (outputs velocity)
+#### 9. Velocity PID Controller (`pid_velocity_controller.py`)
+- **Frequency**: 100 Hz
+- **Input**:
+  - `joint_velocity_target` (from position PID)
+  - `joint_velocity_feedforward` (from IVK)
+  - `joint_states` (current state)
+- **Output**: `/effort_controller_leg_X/commands` (torque to Gazebo)
+- **Function**: Velocity control with feedforward + feedback
+- **Features**: Gravity compensation, feedforward
 
-### 9. Velocity PID Controller
-**File**: `pid_velocity_controller.py`  
-**Frequency**: 100 Hz  
-**Input**:
-- `/hexapod/leg_X/joint_states` (JointState) - current joint velocities
-- `/hexapod/leg_X/joint_velocity_target` (Float64MultiArray) - from position controller
-- `/hexapod/leg_X/joint_velocity_feedforward` (Float64MultiArray) - from IVK
-**Output**:
-- `/effort_controller_leg_X/commands` (Float64MultiArray) - torque to Gazebo
-**Function**: Velocity control loop with PID + feedforward (outputs torque)
-
-### 10. Forward Kinematics (Optional for monitoring)
-**File**: `forward_position_kinematic.py`  
-**Frequency**: 100 Hz  
-**Input**:
-- `/hexapod/leg_X/joint_states` (JointState) - joint positions
-**Output**:
-- `/hexapod/leg_X/end_effector_position` (PointStamped) - computed foot position
-**Function**: Computes actual foot position for verification/visualization
+#### 10. Forward Kinematics (`forward_position_kinematic.py`)
+- **Frequency**: 100 Hz
+- **Model**: **PDF model with URDF offset correction**
+- **Input**: `joint_states`
+- **Output**: `end_effector_position` (computed foot position)
+- **Function**: Verification and monitoring
 
 ---
 
-## Control Hierarchy
+## 🛠️ Recent Fixes & Improvements
 
-```
-Level 1: High-Level Planning (10 Hz)
-    └─ Gait Planner: Select gait pattern
+### PID_tuning Branch (Latest)
 
-Level 2: Coordination (50 Hz)
-    └─ State Machine: Coordinate leg phases
-    └─ Set Point Generator: Generate discrete waypoints
+#### ✅ Critical Stability Fixes:
+1. **Fixed Tripod Gait Pattern** (`state_controller.py`)
+   - Corrected from `[1,4,5]` to `[1,3,5]` for Group 1
+   - Proper alternating pattern for stable walking
 
-Level 3: Trajectory Generation (100 Hz)
-    └─ Trajectory Generator: Smooth interpolation
+2. **Removed Floating Robot Issue** (`hexapod.xacro`)
+   - Removed fixed `world_to_base` joint that locked robot at z=0.1
+   - Robot now properly interacts with physics
 
-Level 4: Inverse Kinematics (100 Hz or callback)
-    ├─ IK: Position mapping (Cartesian → Joint space)
-    └─ IVK: Velocity mapping (feedforward)
+3. **Fixed IVK Consistency** (`inverse_velocity_kinematic.py`)
+   - Added PDF_TO_URDF_OFFSET documentation
+   - Mathematical proof that constant offset doesn't affect velocity
+   - Increased damping factor: 0.01 → 0.05
 
-Level 5: Control (100 Hz)
-    ├─ Position PID: Position tracking
-    └─ Velocity PID: Torque generation
+4. **Optimized Gait Parameters** (`simple.launch.py`)
+   - step_height: 0.03 → 0.02 (more stable)
+   - step_length_scale: 0.5 → 0.3 (shorter steps)
+   - cycle_time: 20.0 → 2.0 (faster, better balance)
+
+5. **Cleaned Up Launch Files**
+   - Removed duplicate `robot_state_publisher` from `simple.launch.py`
+   - Removed extra pose publisher plugin from `gazebo_full.xacro`
+   - Removed `/model/hexapod/pose` bridge from `simulation-full.launch.py`
+
+---
+
+## 🚀 Quick Start
+
+### 1. Build
+```bash
+cd ~/Desktop/FRA333_Kinematic_Project
+colcon build
+source install/setup.bash
 ```
 
----
+### 2. Launch Simulation
+```bash
+# Terminal 1: Start Gazebo simulation
+ros2 launch hexapod_simulation simulation-full.launch.py
 
-## Key Design Features
+# Terminal 2: Start control nodes (wait 10 seconds for Gazebo)
+source install/setup.bash
+ros2 launch hexapod simple.launch.py
 
-1. **Hierarchical Control**: Clear separation of planning, coordination, and low-level control
-
-2. **Topic-Based Communication**: ROS2 topics allow flexible node interconnection
-
-3. **Per-Leg Independence**: Each leg has its own control stack (7 nodes)
-
-4. **Feedforward + Feedback**: Combines velocity feedforward (IVK) with PID feedback
-
-5. **Smooth Trajectories**: Cubic/quintic spline interpolation for smooth motion
-
-6. **Frequency Separation**: 
-   - Planning: 10 Hz (slow)
-   - Coordination: 50 Hz (medium)
-   - Control: 100 Hz (fast)
-
----
-
-## Fixed Data Flow Issue
-
-**Original Problem**: Set point generator was publishing to all 6 legs in the skeleton
-
-**Solution**: Each leg now has its own set_point generator instance that:
-- Subscribes to its own `/hexapod/leg_X/phase_info`
-- Publishes to its own `/hexapod/leg_X/end_effector_setpoint`
-
-This ensures proper one-to-one mapping:
+# Terminal 3: Send velocity command (wait 4 seconds for nodes)
+source install/setup.bash
+ros2 topic pub /cmd_vel geometry_msgs/msg/Twist "{linear: {x: 0.05}}"
 ```
-state_machine → phase_info → set_point → setpoint → trajectory
+
+### 3. Control
+```bash
+# Forward
+ros2 topic pub /cmd_vel geometry_msgs/msg/Twist "{linear: {x: 0.1}}"
+
+# Turn left
+ros2 topic pub /cmd_vel geometry_msgs/msg/Twist "{angular: {z: 0.5}}"
+
+# Stop
+ros2 topic pub /cmd_vel geometry_msgs/msg/Twist "{}"
 ```
 
 ---
 
-## Launch File
-The `simple_launch.py` file launches all nodes with proper remapping (currently configured for leg 1 only, expand the range to 1-6 for all legs).
+## 📐 Kinematic Models
+
+### PDF Model (Denavit-Hartenberg)
+Based on research: *Canberk Suat Gurel — Hexapod Modelling, Path Planning and Control*
+
+**DH Parameters**:
+- Joint 1 (Hip): a=0.0785m, α=+90°, θ_offset=+90°
+- Joint 2 (Knee): a=0.12m, α=0°, θ_offset=0°
+- Joint 3 (Ankle): a=0.1899m, α=-90°, θ_offset=-90°
+
+**URDF Offset Correction**:
+```python
+PDF_TO_URDF_OFFSET = [0.18, -0.1985, 0.1399]
+```
+
+### Coordinate Frames
+- **Base Frame**: Robot body center
+- **Leg Frame**: Hip joint (6 frames, one per leg)
+- **PDF Frame**: DH convention frame
+- **URDF Frame**: Actual robot geometry
 
 ---
 
-## Next Steps for Implementation
+## 🎮 Gait Patterns
 
-1. Implement forward kinematics calculation
-2. Implement inverse kinematics (analytical solution)
-3. Implement Jacobian calculation for IVK
-4. Implement PID control logic
-5. Implement trajectory interpolation
-6. Implement set point generation (swing/stance)
-7. Test with Gazebo simulation
+### Tripod Gait (Default, gait_type=0)
+- **Group 1**: Legs 1, 3, 5 (phase 0.0)
+- **Group 2**: Legs 2, 4, 6 (phase 0.5)
+- **Duty Factor**: 0.5
+- **Speed**: Fast, most stable
+
+### Wave Gait (gait_type=1)
+- Sequential leg lifting: 1→2→3→4→5→6
+- **Duty Factor**: 0.83
+- **Speed**: Slow, very stable
+
+### Ripple Gait (gait_type=2)
+- Three groups of paired legs
+- **Duty Factor**: 0.67
+- **Speed**: Medium
+
+---
+
+## 📊 Performance Tuning
+
+### Current Parameters (Optimized)
+```python
+# Gait Parameters
+step_height = 0.02          # Lower = more stable
+step_length_scale = 0.3     # Shorter steps = less sway
+cycle_time = 2.0            # Faster = better balance
+
+# Position PID
+Kp = [12.5, 12.5, 10.0]
+Ki = [0.5, 0.5, 1.0]
+Kd = [0.5, 0.5, 0.75]
+
+# Velocity PID
+Kp = [5.0, 5.0, 5.0]
+Ki = [0.5, 0.5, 0.5]
+Kd = [0.0, 0.0, 0.0]
+
+# IVK Damping
+damping_factor = 0.05       # Higher = smoother, less oscillation
+```
+
+---
+
+## 🗂️ Repository Structure
+
+```
+FRA333_Kinematic_Project/
+├── src/
+│   ├── hexapod/                    # Main control package
+│   │   ├── scripts/
+│   │   │   ├── gait_planning.py
+│   │   │   ├── state_controller.py
+│   │   │   ├── set_point.py
+│   │   │   ├── trajectory_planning.py
+│   │   │   ├── inverse_position_kinematic.py
+│   │   │   ├── inverse_velocity_kinematic.py
+│   │   │   ├── pid_position_controller.py
+│   │   │   ├── pid_velocity_controller.py
+│   │   │   ├── forward_position_kinematic.py
+│   │   │   ├── joint_state_splitter.py
+│   │   │   ├── fk_pdf_model.py         # PDF kinematic library
+│   │   │   └── data_logger.py          # Data logging utility
+│   │   └── launch/
+│   │       └── simple.launch.py        # Main control launch file
+│   ├── hexapod_description/        # Robot URDF/xacro
+│   │   └── robot/visual/
+│   │       ├── hexapod.xacro
+│   │       ├── gazebo_full.xacro
+│   │       └── hexapod_params.xacro
+│   └── hexapod_simulation/         # Gazebo simulation
+│       └── launch/
+│           └── simulation-full.launch.py
+├── README.md
+└── rosgraph.png
+```
+
+---
+
+## 🐛 Known Issues & Solutions
+
+### Issue: Robot floating in air
+**Solution**: ✅ Fixed - Removed world frame fixed joint
+
+### Issue: Robot walking unstable/tilting
+**Solutions**:
+- ✅ Fixed gait pattern
+- ✅ Optimized gait parameters
+- ✅ Increased IVK damping
+
+### Issue: Authentication failed for git push
+**Solution**: Use Personal Access Token instead of password
+```bash
+git config --global credential.helper store
+git push -u origin <branch>
+# Enter username and token (not password)
+```
+
+---
+
+## 🔧 Troubleshooting
+
+### Robot not moving
+1. Check all nodes are running: `ros2 node list`
+2. Check topics: `ros2 topic list`
+3. Verify joint controllers loaded: `ros2 control list_controllers`
+
+### Robot falling over
+1. Reduce step_height: `0.02 → 0.015`
+2. Reduce step_length_scale: `0.3 → 0.2`
+3. Increase cycle_time: `2.0 → 2.5`
+
+### Oscillation/shaking
+1. Increase IVK damping: `0.05 → 0.1`
+2. Increase PID Kd values
+3. Reduce velocity commands
+
+---
+
+## 📚 Documentation
+
+- **GAIT_FRAMEWORK_ARCHITECTURE.md** - Detailed gait planning architecture
+- **PDF_TEST_RESULTS_TH.md** - PDF model test results (Thai)
+- **REFACTORING_SUMMARY.md** - Code refactoring summary
+- **DATA_LOGGER_USAGE.md** - Data logging guide
+
+---
+
+## 👥 Contributors
+
+- Development Team
+- Based on research: Canberk Suat Gurel
+
+---
+
+## 📄 License
+
+Educational project for FRA333 Robotics course
+
+---
+
+## 🚧 Future Improvements
+
+- [ ] Implement terrain adaptation
+- [ ] Add obstacle avoidance
+- [ ] Optimize PID auto-tuning
+- [ ] Add teleoperation interface
+- [ ] Implement vision-based navigation
+
+---
+
+**Last Updated**: December 2025
+**Branch**: PID_tuning
+**Status**: ✅ Stable and functional
