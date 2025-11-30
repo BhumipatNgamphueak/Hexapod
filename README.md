@@ -59,7 +59,6 @@ User Input (/cmd_vel)
 - **Input**: `gait_parameters`, `body_velocity`
 - **Output**: `/hexapod/leg_{1-6}/phase_info` - [phase_type, progress, leg_phase]
 - **Function**: Manages gait cycle and calculates phase for each leg
-- **✅ Fixed**: Corrected tripod gait pattern (legs 1,3,5 and 2,4,6)
 
 #### 3. Joint State Splitter (`joint_state_splitter.py`)
 - **Frequency**: Callback-based
@@ -91,7 +90,6 @@ User Input (/cmd_vel)
 - **Input**: `end_effector_target`
 - **Output**: `joint_position_target`
 - **Function**: Analytical IK solution (geometric approach)
-- **✅ Includes**: PDF_TO_URDF_OFFSET = [0.18, -0.1985, 0.1399]
 
 #### 7. Inverse Velocity Kinematics (`inverse_velocity_kinematic.py`)
 - **Frequency**: 100 Hz
@@ -99,8 +97,7 @@ User Input (/cmd_vel)
 - **Input**: `end_effector_velocity`, `joint_states`
 - **Output**: `joint_velocity_feedforward`
 - **Function**: Damped least squares Jacobian inverse
-- **✅ Fixed**: Added proper mathematical explanation for offset handling
-- **Damping**: 0.05 (increased from 0.01 for stability)
+- **Damping**: 0.05
 
 #### 8. Position PID Controller (`pid_position_controller.py`)
 - **Frequency**: 100 Hz
@@ -128,36 +125,6 @@ User Input (/cmd_vel)
 - **Input**: `joint_states`
 - **Output**: `end_effector_position` (computed foot position)
 - **Function**: Verification and monitoring
-
----
-
-## 🛠️ Recent Fixes & Improvements
-
-### PID_tuning Branch (Latest)
-
-#### ✅ Critical Stability Fixes:
-1. **Fixed Tripod Gait Pattern** (`state_controller.py`)
-   - Corrected from `[1,4,5]` to `[1,3,5]` for Group 1
-   - Proper alternating pattern for stable walking
-
-2. **Removed Floating Robot Issue** (`hexapod.xacro`)
-   - Removed fixed `world_to_base` joint that locked robot at z=0.1
-   - Robot now properly interacts with physics
-
-3. **Fixed IVK Consistency** (`inverse_velocity_kinematic.py`)
-   - Added PDF_TO_URDF_OFFSET documentation
-   - Mathematical proof that constant offset doesn't affect velocity
-   - Increased damping factor: 0.01 → 0.05
-
-4. **Optimized Gait Parameters** (`simple.launch.py`)
-   - step_height: 0.03 → 0.02 (more stable)
-   - step_length_scale: 0.5 → 0.3 (shorter steps)
-   - cycle_time: 20.0 → 2.0 (faster, better balance)
-
-5. **Cleaned Up Launch Files**
-   - Removed duplicate `robot_state_publisher` from `simple.launch.py`
-   - Removed extra pose publisher plugin from `gazebo_full.xacro`
-   - Removed `/model/hexapod/pose` bridge from `simulation-full.launch.py`
 
 ---
 
@@ -195,29 +162,6 @@ ros2 topic pub /cmd_vel geometry_msgs/msg/Twist "{angular: {z: 0.5}}"
 # Stop
 ros2 topic pub /cmd_vel geometry_msgs/msg/Twist "{}"
 ```
-
----
-
-## 📐 Kinematic Models
-
-### PDF Model (Denavit-Hartenberg)
-Based on research: *Canberk Suat Gurel — Hexapod Modelling, Path Planning and Control*
-
-**DH Parameters**:
-- Joint 1 (Hip): a=0.0785m, α=+90°, θ_offset=+90°
-- Joint 2 (Knee): a=0.12m, α=0°, θ_offset=0°
-- Joint 3 (Ankle): a=0.1899m, α=-90°, θ_offset=-90°
-
-**URDF Offset Correction**:
-```python
-PDF_TO_URDF_OFFSET = [0.18, -0.1985, 0.1399]
-```
-
-### Coordinate Frames
-- **Base Frame**: Robot body center
-- **Leg Frame**: Hip joint (6 frames, one per leg)
-- **PDF Frame**: DH convention frame
-- **URDF Frame**: Actual robot geometry
 
 ---
 
@@ -301,55 +245,6 @@ FRA333_Kinematic_Project/
 
 ---
 
-## 🐛 Known Issues & Solutions
-
-### Issue: Robot floating in air
-**Solution**: ✅ Fixed - Removed world frame fixed joint
-
-### Issue: Robot walking unstable/tilting
-**Solutions**:
-- ✅ Fixed gait pattern
-- ✅ Optimized gait parameters
-- ✅ Increased IVK damping
-
-### Issue: Authentication failed for git push
-**Solution**: Use Personal Access Token instead of password
-```bash
-git config --global credential.helper store
-git push -u origin <branch>
-# Enter username and token (not password)
-```
-
----
-
-## 🔧 Troubleshooting
-
-### Robot not moving
-1. Check all nodes are running: `ros2 node list`
-2. Check topics: `ros2 topic list`
-3. Verify joint controllers loaded: `ros2 control list_controllers`
-
-### Robot falling over
-1. Reduce step_height: `0.02 → 0.015`
-2. Reduce step_length_scale: `0.3 → 0.2`
-3. Increase cycle_time: `2.0 → 2.5`
-
-### Oscillation/shaking
-1. Increase IVK damping: `0.05 → 0.1`
-2. Increase PID Kd values
-3. Reduce velocity commands
-
----
-
-## 📚 Documentation
-
-- **GAIT_FRAMEWORK_ARCHITECTURE.md** - Detailed gait planning architecture
-- **PDF_TEST_RESULTS_TH.md** - PDF model test results (Thai)
-- **REFACTORING_SUMMARY.md** - Code refactoring summary
-- **DATA_LOGGER_USAGE.md** - Data logging guide
-
----
-
 ## 👥 Contributors
 
 - Development Team
@@ -363,16 +258,4 @@ Educational project for FRA333 Robotics course
 
 ---
 
-## 🚧 Future Improvements
 
-- [ ] Implement terrain adaptation
-- [ ] Add obstacle avoidance
-- [ ] Optimize PID auto-tuning
-- [ ] Add teleoperation interface
-- [ ] Implement vision-based navigation
-
----
-
-**Last Updated**: December 2025
-**Branch**: PID_tuning
-**Status**: ✅ Stable and functional
