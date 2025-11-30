@@ -82,7 +82,7 @@ def generate_launch_description():
             'max_linear_y': 0.2,
             'max_angular_z': 1.0,
             'step_height': 0.03,
-            'step_length_scale': 0.5,  # Increased from 0.05 to make feet step further
+            'step_length_scale': 0.75,  # Increased from 0.05 to make feet step further
             'cycle_time': 20.0,  # Increased to slow down leg movement
             # Default cmd_vel values (robot will walk forward at startup)
             'default_linear_x': 0.1,  # 0.1 m/s forward
@@ -125,12 +125,12 @@ def generate_launch_description():
     # Each leg's offset is oriented in its own direction based on hexagon geometry
     # Reduced to 0.18m radial distance for reachability
     leg_configs = {
-        1: {'attach': [-1.2616e-05, -0.095255, 0.0], 'rpy': [0.0, 0.0, -1.5708], 'offset': [0.0, -0.18, -0.05]},    # Back (−90°)
-        2: {'attach': [0.082487, -0.047638, 0.0], 'rpy': [0.0, 0.0, -0.5236], 'offset': [0.156, -0.09, -0.05]},     # Back-right (−30°)
-        3: {'attach': [0.082499, 0.047616, 0.0], 'rpy': [0.0, 0.0, 0.5236], 'offset': [0.156, 0.09, -0.05]},        # Front-right (+30°)
-        4: {'attach': [1.2616e-05, 0.095255, 0.0], 'rpy': [0.0, 0.0, 1.5708], 'offset': [0.0, 0.18, -0.05]},        # Front (+90°)
-        5: {'attach': [-0.082487, 0.047638, 0.0], 'rpy': [0.0, 0.0, 2.618], 'offset': [-0.156, 0.09, -0.05]},       # Front-left (+150°)
-        6: {'attach': [-0.082499, -0.047616, 0.0], 'rpy': [0.0, 0.0, -2.618], 'offset': [-0.156, -0.09, -0.05]},    # Back-left (−150°)
+        1: {'attach': [-1.2616e-05, -0.095255, 0.0], 'rpy': [0.0, 0.0, -1.5708], 'offset': [0.0, -0.18, -0.055]},    # Back (−90°)
+        2: {'attach': [0.082487, -0.047638, 0.0], 'rpy': [0.0, 0.0, -0.5236], 'offset': [0.156, -0.09, -0.055]},     # Back-right (−30°)
+        3: {'attach': [0.082499, 0.047616, 0.0], 'rpy': [0.0, 0.0, 0.5236], 'offset': [0.156, 0.09, -0.055]},        # Front-right (+30°)
+        4: {'attach': [1.2616e-05, 0.095255, 0.0], 'rpy': [0.0, 0.0, 1.5708], 'offset': [0.0, 0.18, -0.055]},        # Front (+90°)
+        5: {'attach': [-0.082487, 0.047638, 0.0], 'rpy': [0.0, 0.0, 2.618], 'offset': [-0.156, 0.09, -0.055]},       # Front-left (+150°)
+        6: {'attach': [-0.082499, -0.047616, 0.0], 'rpy': [0.0, 0.0, -2.618], 'offset': [-0.156, -0.09, -0.055]},    # Back-left (−150°)
     }
     
     all_leg_nodes = []  # Collect ALL leg nodes here

@@ -71,7 +71,21 @@ def generate_launch_description():
         ]
     )
 
-    # Spawn entity in Gazebo
+    # # Spawn cylinder platform
+    # spawn_platform = Node(
+    #     package='ros_gz_sim',
+    #     executable='create',
+    #     name='spawn_platform',
+    #     output='screen',
+    #     arguments=[
+    #         '-file', os.path.join(sim_pkg, 'models', 'cylinder_platform', 'model.sdf'),
+    #         '-name', 'cylinder_platform',
+    #         '-allow_renaming', 'true',
+    #         '-x', '0.0', '-y', '0.0', '-z', '0.0'
+    #     ]
+    # )
+
+    # Spawn hexapod robot on top of platform
     spawn_entity = Node(
         package='ros_gz_sim', 
         executable='create', 
@@ -81,7 +95,7 @@ def generate_launch_description():
             '-topic', 'robot_description',
             '-name', 'hexapod',
             '-allow_renaming', 'true',
-            '-x', '0.0', '-y', '0.0', '-z', '0.1'
+            '-x', '0.0', '-y', '0.0', '-z', '0.6'  # Spawn higher to be on platform
         ]
     )
 
@@ -188,7 +202,8 @@ def generate_launch_description():
         ign_model_path,
         gz_sim,
         state_pub,
-        spawn_entity,
+        # spawn_platform,  # Spawn platform first
+        spawn_entity,    # Then spawn robot on top
         bridge,  # Bridge now includes odometry!
         # After spawning the robot, start the joint_state_broadcaster
         RegisterEventHandler(

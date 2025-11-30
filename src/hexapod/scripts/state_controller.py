@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 """
-State Machine Node - CORRECTED PHASE PATTERNS
+State Machine Node - Tripod Gait Only
 Manages gait cycle and calculates phase for each leg
 
-FIXES:
-1. Corrected wave gait: proper sequential pattern (0, 1/6, 2/6, 3/6, 4/6, 5/6)
-2. Corrected ripple gait: proper 3-group pattern
-3. Added phase verification logging
-4. Added sanity checks
+Tripod Gait Pattern:
+- Group 1 (phase 0.0): Legs 1, 3, 5
+- Group 2 (phase 0.5): Legs 2, 4, 6
+- Duty factor: 0.5 (50% stance, 50% swing)
 """
 
 import rclpy
@@ -47,11 +46,9 @@ class StateMachine(Node):
         self.log_counter = 0
         self.log_interval = 100  # Log every 100 cycles (2 seconds at 50Hz)
         
-        # Gait configurations with phase offsets
+        # Gait configurations - Tripod only
         self.gait_configs = {
-            0: {'name': 'tripod', 'duty_factor': 0.5},
-            1: {'name': 'wave', 'duty_factor': 0.83},
-            2: {'name': 'ripple', 'duty_factor': 0.67}
+            0: {'name': 'tripod', 'duty_factor': 0.5}
         }
         
         # INPUT: Subscribers
@@ -126,34 +123,14 @@ class StateMachine(Node):
         Returns: Phase offset in [0, 1)
         """
         
-        if gait_type == 0:  # Tripod gait
-            # Two groups alternate (most stable, fastest)
-            # Group 1 (phase 0.0): Legs 1, 3, 5 (alternating pattern)
-            # Group 2 (phase 0.5): Legs 2, 4, 6 (alternating pattern)
-            if leg_id in [1, 3, 5]:
-                return 0.0
-            else:
-                return 0.5
-        
-        elif gait_type == 1:  # Wave gait
-            # Sequential lift (slowest, most stable)
-            # Each leg lifts 1/6 cycle after previous
-            # Order: L1 → R1 → L2 → R2 → L3 → R3
-            phase_offsets = [0.0, 1/6, 2/6, 3/6, 4/6, 5/6]
-            return phase_offsets[leg_id - 1]
-        
-        elif gait_type == 2:  # Ripple gait
-            # Three groups of two legs
-            # More stable than wave, smoother than tripod
-            # Group 1 (phase 0.0): L1, R3 → Legs 1, 6
-            # Group 2 (phase 1/3): R1, L3 → Legs 2, 5
-            # Group 3 (phase 2/3): L2, R2 → Legs 3, 4
-            phase_offsets = [0.0, 1/3, 2/3, 2/3, 1/3, 0.0]
-            return phase_offsets[leg_id - 1]
-        
+        # Tripod gait with π/2 phase shift
+        # Two groups with 90° phase difference
+        # Group 1 (phase 0.0): Legs 1, 3, 5 (alternating pattern)
+        # Group 2 (phase 0.25): Legs 2, 4, 6 (π/2 radians = 0.25 normalized)
+        if leg_id in [1, 3, 5]:
+            return 0.0
         else:
-            self.get_logger().warn(f'Unknown gait type: {gait_type}, using tripod')
-            return 0.0 if leg_id in [1, 4, 5] else 0.5
+            return 0.25
     
     def _calculate_phase_type(self, leg_phase, duty_factor):
         """Determine if leg is in stance (0) or swing (1) phase"""

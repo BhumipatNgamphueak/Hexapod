@@ -1,0 +1,240 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<root>
+ <tabbed_widget name="Main Window" parent="main_window">
+  <Tab tab_name="tab1" containers="1">
+   <Container>
+    <DockSplitter sizes="0.167235;0.166098;0.167235;0.166098;0.167235;0.166098" count="6" orientation="-">
+     <DockSplitter sizes="0.5;0.5" count="2" orientation="|">
+      <DockArea name="...">
+       <plot flip_y="false" mode="TimeSeries" style="Lines" flip_x="false">
+        <range left="84.742554" bottom="-0.057069" top="-0.018845" right="89.856617"/>
+        <limitY/>
+        <curve name="/hexapod/leg_1/end_effector_position/point/z" color="#d62728"/>
+        <curve name="/hexapod/leg_1/end_effector_target/point/z" color="#ff7f0e"/>
+       </plot>
+      </DockArea>
+      <DockArea name="...">
+       <plot flip_y="false" mode="TimeSeries" style="Lines" flip_x="false">
+        <range left="84.742554" bottom="-47.529520" top="46.103061" right="89.856617"/>
+        <limitY/>
+        <curve name="Leg1_tracking_error" color="#1f77b4"/>
+       </plot>
+      </DockArea>
+     </DockSplitter>
+     <DockSplitter sizes="0.5;0.5" count="2" orientation="|">
+      <DockArea name="...">
+       <plot flip_y="false" mode="TimeSeries" style="Lines" flip_x="false">
+        <range left="84.742554" bottom="0.193246" top="0.295398" right="89.856617"/>
+        <limitY/>
+        <curve name="/hexapod/leg_2/end_effector_position/point/x" color="#f14cc1"/>
+        <curve name="/hexapod/leg_2/end_effector_target/point/x" color="#17becf"/>
+       </plot>
+      </DockArea>
+      <DockArea name="...">
+       <plot flip_y="false" mode="TimeSeries" style="Lines" flip_x="false">
+        <range left="84.742554" bottom="-23.425374" top="4.083344" right="89.856617"/>
+        <limitY/>
+        <curve name="Leg2_ee_tracking_error" color="#d62728"/>
+       </plot>
+      </DockArea>
+     </DockSplitter>
+     <DockSplitter sizes="0.5;0.5" count="2" orientation="|">
+      <DockArea name="...">
+       <plot flip_y="false" mode="TimeSeries" style="Lines" flip_x="false">
+        <range left="84.742554" bottom="0.181293" top="0.281830" right="89.856617"/>
+        <limitY/>
+        <curve name="/hexapod/leg_3/end_effector_position/point/x" color="#1f77b4"/>
+        <curve name="/hexapod/leg_3/end_effector_target/point/x" color="#1ac938"/>
+       </plot>
+      </DockArea>
+      <DockArea name="...">
+       <plot flip_y="false" mode="TimeSeries" style="Lines" flip_x="false">
+        <range left="84.742554" bottom="-9.511268" top="45.644424" right="89.856617"/>
+        <limitY/>
+        <curve name="Leg3_ee_tracking_error" color="#ff7f0e"/>
+       </plot>
+      </DockArea>
+     </DockSplitter>
+     <DockSplitter sizes="0.5;0.5" count="2" orientation="|">
+      <DockArea name="...">
+       <plot flip_y="false" mode="TimeSeries" style="Lines" flip_x="false">
+        <range left="84.742554" bottom="-0.060241" top="-0.028794" right="89.856617"/>
+        <limitY/>
+        <curve name="/hexapod/leg_4/end_effector_position/point/z" color="#9467bd"/>
+        <curve name="/hexapod/leg_4/end_effector_target/point/z" color="#bcbd22"/>
+       </plot>
+      </DockArea>
+      <DockArea name="...">
+       <plot flip_y="false" mode="TimeSeries" style="Lines" flip_x="false">
+        <range left="84.742554" bottom="-13.249536" top="83.348710" right="89.856617"/>
+        <limitY/>
+        <curve name="Leg_4_tracking_errors" color="#d62728"/>
+       </plot>
+      </DockArea>
+     </DockSplitter>
+     <DockSplitter sizes="0.5;0.5" count="2" orientation="|">
+      <DockArea name="...">
+       <plot flip_y="false" mode="TimeSeries" style="Lines" flip_x="false">
+        <range left="84.742554" bottom="-0.295542" top="-0.189114" right="89.856617"/>
+        <limitY/>
+        <curve name="/hexapod/leg_5/end_effector_position/point/x" color="#1f77b4"/>
+        <curve name="/hexapod/leg_5/end_effector_target/point/x" color="#1ac938"/>
+       </plot>
+      </DockArea>
+      <DockArea name="...">
+       <plot flip_y="false" mode="TimeSeries" style="Lines" flip_x="false">
+        <range left="84.742554" bottom="-30.433292" top="6.776887" right="89.856617"/>
+        <limitY/>
+        <curve name="Leg5_ee_tracking_error" color="#9467bd"/>
+       </plot>
+      </DockArea>
+     </DockSplitter>
+     <DockSplitter sizes="0.5;0.5" count="2" orientation="|">
+      <DockArea name="...">
+       <plot flip_y="false" mode="TimeSeries" style="Lines" flip_x="false">
+        <range left="84.742554" bottom="-0.232982" top="-0.160149" right="89.856617"/>
+        <limitY/>
+        <curve name="/hexapod/leg_6/end_effector_position/point/x" color="#f14cc1"/>
+        <curve name="/hexapod/leg_6/end_effector_target/point/x" color="#17becf"/>
+       </plot>
+      </DockArea>
+      <DockArea name="...">
+       <plot flip_y="false" mode="TimeSeries" style="Lines" flip_x="false">
+        <range left="84.742554" bottom="-15.769684" top="24.339473" right="89.856617"/>
+        <limitY/>
+        <curve name="Leg6_ee_tracking_error" color="#17becf"/>
+       </plot>
+      </DockArea>
+     </DockSplitter>
+    </DockSplitter>
+   </Container>
+  </Tab>
+  <currentTabIndex index="0"/>
+ </tabbed_widget>
+ <use_relative_time_offset enabled="1"/>
+ <!-- - - - - - - - - - - - - - - -->
+ <!-- - - - - - - - - - - - - - - -->
+ <Plugins>
+  <plugin ID="DataLoad CSV">
+   <parameters delimiter="0" time_axis=""/>
+  </plugin>
+  <plugin ID="DataLoad MCAP"/>
+  <plugin ID="DataLoad ROS2 bags">
+   <use_header_stamp value="false"/>
+   <discard_large_arrays value="true"/>
+   <max_array_size value="100"/>
+   <boolean_strings_to_number value="true"/>
+   <remove_suffix_from_strings value="true"/>
+   <selected_topics value=""/>
+  </plugin>
+  <plugin ID="DataLoad ULog"/>
+  <plugin ID="ROS2 Topic Subscriber">
+   <use_header_stamp value="false"/>
+   <discard_large_arrays value="true"/>
+   <max_array_size value="100"/>
+   <boolean_strings_to_number value="true"/>
+   <remove_suffix_from_strings value="true"/>
+   <selected_topics value="/parameter_events;/rosout;/clicked_point;/clock;/cmd_vel;/effort_controller_leg_1/commands;/effort_controller_leg_2/commands;/effort_controller_leg_3/commands;/effort_controller_leg_4/commands;/effort_controller_leg_5/commands;/effort_controller_leg_6/commands;/goal_pose;/hexapod/body_velocity;/hexapod/gait_parameters;/hexapod/leg_1/end_effector_position;/hexapod/leg_1/end_effector_setpoint;/hexapod/leg_1/end_effector_target;/hexapod/leg_1/end_effector_velocity;/hexapod/leg_1/joint_position_target;/hexapod/leg_1/joint_states;/hexapod/leg_1/joint_targets;/hexapod/leg_1/joint_velocity_feedforward;/hexapod/leg_1/joint_velocity_target;/hexapod/leg_1/phase_info;/hexapod/leg_2/end_effector_setpoint;/hexapod/leg_2/end_effector_target;/hexapod/leg_2/end_effector_velocity;/hexapod/leg_2/joint_position_target;/hexapod/leg_2/joint_states;/hexapod/leg_2/joint_targets;/hexapod/leg_2/joint_velocity_feedforward;/hexapod/leg_2/joint_velocity_target;/hexapod/leg_2/phase_info;/hexapod/leg_3/end_effector_setpoint;/hexapod/leg_3/end_effector_target;/hexapod/leg_3/end_effector_velocity;/hexapod/leg_3/joint_position_target;/hexapod/leg_3/joint_states;/hexapod/leg_3/joint_targets;/hexapod/leg_3/joint_velocity_feedforward;/hexapod/leg_3/joint_velocity_target;/hexapod/leg_3/phase_info;/hexapod/leg_4/end_effector_position;/hexapod/leg_4/end_effector_setpoint;/hexapod/leg_4/end_effector_target;/hexapod/leg_4/end_effector_velocity;/hexapod/leg_4/joint_position_target;/hexapod/leg_4/joint_states;/hexapod/leg_4/joint_targets;/hexapod/leg_4/joint_velocity_target;/hexapod/leg_4/phase_info;/hexapod/leg_5/end_effector_position;/hexapod/leg_5/end_effector_setpoint;/hexapod/leg_5/end_effector_target;/hexapod/leg_5/end_effector_velocity;/hexapod/leg_5/joint_states;/hexapod/leg_5/joint_targets;/hexapod/leg_5/joint_velocity_target;/hexapod/leg_5/phase_info;/hexapod/leg_6/end_effector_setpoint;/hexapod/leg_6/end_effector_target;/hexapod/leg_6/end_effector_velocity;/hexapod/leg_6/joint_position_target;/hexapod/leg_6/joint_states;/hexapod/leg_6/joint_velocity_feedforward;/hexapod/leg_6/joint_velocity_target;/hexapod/leg_6/phase_info;/imu/data;/initialpose;/joint_state_broadcaster/transition_event;/joint_states;/model/hexapod/odometry;/robot_description;/tf;/tf_static;/dynamic_joint_states;/effort_controller_leg_1/transition_event;/effort_controller_leg_2/transition_event;/effort_controller_leg_3/transition_event;/effort_controller_leg_4/transition_event;/effort_controller_leg_5/transition_event;/effort_controller_leg_6/transition_event;/hexapod/leg_2/end_effector_position;/hexapod/leg_3/end_effector_position;/hexapod/leg_4/joint_velocity_feedforward;/hexapod/leg_5/joint_position_target;/hexapod/leg_5/joint_velocity_feedforward;/hexapod/leg_6/end_effector_position;/hexapod/leg_6/joint_targets"/>
+  </plugin>
+  <plugin ID="UDP Server"/>
+  <plugin ID="WebSocket Server"/>
+  <plugin ID="ZMQ Subscriber"/>
+  <plugin ID="Fast Fourier Transform"/>
+  <plugin ID="Quaternion to RPY"/>
+  <plugin ID="Reactive Script Editor">
+   <library code="--[[ Helper function to create a series from arrays&#xa;&#xa; new_series: a series previously created with ScatterXY.new(name)&#xa; prefix:     prefix of the timeseries, before the index of the array&#xa; suffix_X:   suffix to complete the name of the series containing the X value. If [nil], use the index of the array.&#xa; suffix_Y:   suffix to complete the name of the series containing the Y value&#xa; timestamp:   usually the tracker_time variable&#xa;              &#xa; Example:&#xa; &#xa; Assuming we have multiple series in the form:&#xa; &#xa;   /trajectory/node.{X}/position/x&#xa;   /trajectory/node.{X}/position/y&#xa;   &#xa; where {N} is the index of the array (integer). We can create a reactive series from the array with:&#xa; &#xa;   new_series = ScatterXY.new(&quot;my_trajectory&quot;) &#xa;   CreateSeriesFromArray( new_series, &quot;/trajectory/node&quot;, &quot;position/x&quot;, &quot;position/y&quot;, tracker_time );&#xa;--]]&#xa;&#xa;function CreateSeriesFromArray( new_series, prefix, suffix_X, suffix_Y, timestamp )&#xa;  &#xa;  --- clear previous values&#xa;  new_series:clear()&#xa;  &#xa;  --- Append points to new_series&#xa;  index = 0&#xa;  while(true) do&#xa;&#xa;    x = index;&#xa;    -- if not nil, get the X coordinate from a series&#xa;    if suffix_X ~= nil then &#xa;      series_x = TimeseriesView.find( string.format( &quot;%s.%d/%s&quot;, prefix, index, suffix_X) )&#xa;      if series_x == nil then break end&#xa;      x = series_x:atTime(timestamp)&#x9; &#xa;    end&#xa;    &#xa;    series_y = TimeseriesView.find( string.format( &quot;%s.%d/%s&quot;, prefix, index, suffix_Y) )&#xa;    if series_y == nil then break end &#xa;    y = series_y:atTime(timestamp)&#xa;    &#xa;    new_series:push_back(x,y)&#xa;    index = index+1&#xa;  end&#xa;end&#xa;&#xa;--[[ Similar to the built-in function GetSeriesNames(), but select only the names with a give prefix. --]]&#xa;&#xa;function GetSeriesNamesByPrefix(prefix)&#xa;  -- GetSeriesNames(9 is a built-in function&#xa;  all_names = GetSeriesNames()&#xa;  filtered_names = {}&#xa;  for i, name in ipairs(all_names)  do&#xa;    -- check the prefix&#xa;    if name:find(prefix, 1, #prefix) then&#xa;      table.insert(filtered_names, name);&#xa;    end&#xa;  end&#xa;  return filtered_names&#xa;end&#xa;&#xa;--[[ Modify an existing series, applying offsets to all their X and Y values&#xa;&#xa; series: an existing timeseries, obtained with TimeseriesView.find(name)&#xa; delta_x: offset to apply to each x value&#xa; delta_y: offset to apply to each y value &#xa;  &#xa;--]]&#xa;&#xa;function ApplyOffsetInPlace(series, delta_x, delta_y)&#xa;  -- use C++ indices, not Lua indices&#xa;  for index=0, series:size()-1 do&#xa;    x,y = series:at(index)&#xa;    series:set(index, x + delta_x, y + delta_y)&#xa;  end&#xa;end&#xa;"/>
+   <scripts/>
+  </plugin>
+  <plugin ID="CSV Exporter"/>
+  <plugin ID="ROS2 Topic Re-Publisher"/>
+ </Plugins>
+ <!-- - - - - - - - - - - - - - - -->
+ <previouslyLoaded_Datafiles/>
+ <previouslyLoaded_Streamer name="ROS2 Topic Subscriber"/>
+ <!-- - - - - - - - - - - - - - - -->
+ <customMathEquations>
+  <snippet name="Leg_4_tracking_errors">
+   <global></global>
+   <function>return ((value-v1)/v1)*100</function>
+   <linked_source>/hexapod/leg_4/end_effector_position/point/z</linked_source>
+   <additional_sources>
+    <v1>/hexapod/leg_4/end_effector_target/point/z</v1>
+   </additional_sources>
+  </snippet>
+  <snippet name="Leg_4_tracking_error">
+   <global></global>
+   <function>return ((value-v1)/v1)*100</function>
+   <linked_source>/hexapod/leg_4/end_effector_position/point/x</linked_source>
+   <additional_sources>
+    <v1>/hexapod/leg_4/end_effector_target/point/x</v1>
+   </additional_sources>
+  </snippet>
+  <snippet name="Leg6_ee_tracking_error">
+   <global></global>
+   <function>return ((value-v1)/v1)*100</function>
+   <linked_source>/hexapod/leg_6/end_effector_position/point/x</linked_source>
+   <additional_sources>
+    <v1>/hexapod/leg_6/end_effector_target/point/x</v1>
+   </additional_sources>
+  </snippet>
+  <snippet name="Leg5_ee_tracking_error">
+   <global></global>
+   <function>return ((value-v1)/v1)*100</function>
+   <linked_source>/hexapod/leg_5/end_effector_position/point/x</linked_source>
+   <additional_sources>
+    <v1>/hexapod/leg_5/end_effector_target/point/x</v1>
+   </additional_sources>
+  </snippet>
+  <snippet name="Leg4_ee_tracking_error">
+   <global></global>
+   <function>return ((value-v1)/v1)*100</function>
+   <linked_source>/hexapod/leg_4/end_effector_position/point/z</linked_source>
+   <additional_sources>
+    <v1>/hexapod/leg_4/end_effector_target/point/z</v1>
+   </additional_sources>
+  </snippet>
+  <snippet name="Leg3_ee_tracking_error">
+   <global></global>
+   <function>return ((value-v1)/v1)*100</function>
+   <linked_source>/hexapod/leg_3/end_effector_position/point/x</linked_source>
+   <additional_sources>
+    <v1>/hexapod/leg_3/end_effector_target/point/x</v1>
+   </additional_sources>
+  </snippet>
+  <snippet name="Leg1_ee_tracking_error">
+   <global></global>
+   <function>return ((value-v1)/v1)</function>
+   <linked_source>/hexapod/leg_1/end_effector_position/point/x</linked_source>
+   <additional_sources>
+    <v1>/hexapod/leg_1/end_effector_target/point/x</v1>
+   </additional_sources>
+  </snippet>
+  <snippet name="Leg1_tracking_error">
+   <global></global>
+   <function>return ((value-v1)/v1)*100</function>
+   <linked_source>/hexapod/leg_1/end_effector_position/point/z</linked_source>
+   <additional_sources>
+    <v1>/hexapod/leg_1/end_effector_target/point/z</v1>
+   </additional_sources>
+  </snippet>
+  <snippet name="Leg2_ee_tracking_error">
+   <global></global>
+   <function>return ((value-v1)/v1)*100</function>
+   <linked_source>/hexapod/leg_2/end_effector_position/point/x</linked_source>
+   <additional_sources>
+    <v1>/hexapod/leg_2/end_effector_target/point/x</v1>
+   </additional_sources>
+  </snippet>
+  <snippet name="Leg1_ee_percentage_error">
+   <global></global>
+   <function>return ((value-v1)/v1)*100</function>
+   <linked_source>/hexapod/leg_1/end_effector_position/point/x</linked_source>
+   <additional_sources>
+    <v1>/hexapod/leg_1/end_effector_target/point/x</v1>
+   </additional_sources>
+  </snippet>
+ </customMathEquations>
+ <snippets/>
+ <!-- - - - - - - - - - - - - - - -->
+</root>
+

@@ -71,10 +71,18 @@ class DataLogger(Node):
         self.base_velocity = np.zeros(3)
         self.base_angular_velocity = np.zeros(3)
         
+        # Additional base metadata
+        self.base_frame_id = ''
+        self.base_child_frame_id = ''
+        self.base_orientation = np.zeros(4)  # quaternion x,y,z,w
+
         self.base_data = {
             'position': np.zeros(3),
             'velocity': np.zeros(3),
             'angular_velocity': np.zeros(3),
+            'orientation': np.zeros(4),
+            'frame_id': '',
+            'child_frame_id': '',
             'timestamp': 0.0
         }
         
@@ -121,10 +129,11 @@ class DataLogger(Node):
                 10
             )
         
-        # Subscribe to base_link ground truth odometry from Gazebo
+        # Subscribe to ground truth odometry (use /model/hexapod/odometry as provided by Gazebo P3D)
+        # This topic provides pose.position.x/y and twist.linear.x/y/z as in the supplied image
         self.create_subscription(
             Odometry,
-            '/hexapod/base_link/odom',
+            '/model/hexapod/odometry',
             self.odom_callback,
             10
         )
@@ -166,9 +175,13 @@ class DataLogger(Node):
         )
         self.base_csv_file = open(base_filename, 'w', newline='')
         self.base_csv_writer = csv.writer(self.base_csv_file)
+        # CSV header now includes frame ids, position (x,y from odom), orientation quaternion,
+        # linear velocity (x,y,z from odom.twist) and angular velocity
         self.base_csv_writer.writerow([
             'timestamp',
-            'pos_x', 'pos_y', 'pos_z',
+            'frame_id', 'child_frame_id',
+            'pos_x', 'pos_y',
+            'orient_x', 'orient_y', 'orient_z', 'orient_w',
             'vel_x', 'vel_y', 'vel_z',
             'ang_vel_x', 'ang_vel_y', 'ang_vel_z',
             'distance_from_ref'
@@ -250,6 +263,18 @@ class DataLogger(Node):
             msg.twist.twist.angular.y,
             msg.twist.twist.angular.z
         ])
+
+        # Store orientation quaternion and frame ids
+        q = msg.pose.pose.orientation
+        self.base_orientation = np.array([q.x, q.y, q.z, q.w])
+        self.base_frame_id = msg.header.frame_id if hasattr(msg, 'header') else ''
+        # nav_msgs/Odometry has child_frame_id field
+        self.base_child_frame_id = msg.child_frame_id if hasattr(msg, 'child_frame_id') else ''
+
+        # Update base_data metadata as well
+        self.base_data['orientation'] = self.base_orientation.copy()
+        self.base_data['frame_id'] = self.base_frame_id
+        self.base_data['child_frame_id'] = self.base_child_frame_id
     
     def log_data(self):
         """Log data to CSV files"""
@@ -298,22 +323,25 @@ class DataLogger(Node):
             self.leg_csv_writers[leg_id].writerow(row)
         
         # ===== LOG BASE_LINK DATA =====
-        # Position relative to reference frame
-        position_rel = self.base_position - self.ref_pos
-        
-        # Velocity from odometry (ground truth)
+        # Position in world frame (use odometry x,y as requested)
+        pos_world = self.base_position.copy()
+
+        # Velocity from odometry (ground truth linear x,y,z)
         velocity = self.base_velocity.copy()
-        
+
         # Angular velocity
         ang_velocity = self.base_angular_velocity.copy()
-        
-        # Distance from reference
+
+        # Distance from reference (still useful) computed from relative position
+        position_rel = pos_world - self.ref_pos
         distance = np.linalg.norm(position_rel)
-        
-        # Write to CSV
+
+        # Write to CSV — only x,y position columns (z omitted as requested)
         row = [
             current_time,
-            position_rel[0], position_rel[1], position_rel[2],
+            self.base_frame_id, self.base_child_frame_id,
+            pos_world[0], pos_world[1],
+            float(self.base_orientation[0]), float(self.base_orientation[1]), float(self.base_orientation[2]), float(self.base_orientation[3]),
             velocity[0], velocity[1], velocity[2],
             ang_velocity[0], ang_velocity[1], ang_velocity[2],
             distance

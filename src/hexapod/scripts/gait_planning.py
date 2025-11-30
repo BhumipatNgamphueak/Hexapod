@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 """
-Gait Planner Node - Generates gait patterns for hexapod locomotion
+Gait Planner Node - Tripod Gait Only
 INPUT: /cmd_vel (Twist - velocity commands)
 OUTPUT: /hexapod/gait_parameters (Float64MultiArray - [gait_type, step_height, step_length, cycle_time, duty_factor])
 OUTPUT: /hexapod/body_velocity (Twist - filtered velocity)
-OUTPUT: /hexapod/leg_X/end_effector_setpoint (PointStamped - discrete waypoints for each leg)
 Frequency: 10 Hz
+
+Tripod Gait Pattern:
+- Group 1 (phase 0.0): Legs 1, 3, 5
+- Group 2 (phase 0.5): Legs 2, 4, 6
 """
 
 import rclpy
@@ -20,16 +23,17 @@ class GaitPlanner(Node):
         super().__init__('gait_planner')
         
         # Parameters
-        self.declare_parameter('default_gait_type', 0)  # 0: tripod, 1: wave, 2: ripple
+        self.declare_parameter('default_gait_type', 0)  # 0: tripod only
         self.declare_parameter('max_linear_x', 0.3)
         self.declare_parameter('max_linear_y', 0.2)
         self.declare_parameter('max_angular_z', 1.0)
         self.declare_parameter('step_height', 0.03)
-        self.declare_parameter('step_length_scale', 0.05)
+        self.declare_parameter('step_length_scale', 0.75)
         self.declare_parameter('min_cycle_time', 0.5)
         self.declare_parameter('max_cycle_time', 2.0)
         self.declare_parameter('num_legs', 6)
-        self.declare_parameter('num_waypoints', 8)
+        # self.declare_parameter('num_waypoints', 8)
+        self.declare_parameter('num_waypoints', 16)
         
         # Default cmd_vel values (when no external command is received)
         self.declare_parameter('default_linear_x', 0.0)
@@ -63,11 +67,9 @@ class GaitPlanner(Node):
         self.gait_phase = 0.0  # Phase tracker [0, 1]
         self.dt = 0.1  # 10 Hz
         
-        # Gait definitions (duty factor = fraction of cycle in stance)
+        # Gait definitions - Tripod only
         self.gait_configs = {
-            0: {'name': 'tripod', 'duty_factor': 0.5, 'legs_per_group': 3},
-            1: {'name': 'wave', 'duty_factor': 0.83, 'legs_per_group': 1},
-            2: {'name': 'ripple', 'duty_factor': 0.67, 'legs_per_group': 2}
+            0: {'name': 'tripod', 'duty_factor': 0.5, 'legs_per_group': 3}
         }
         
         # INPUT: Subscribe to velocity commands
@@ -96,14 +98,8 @@ class GaitPlanner(Node):
             msg.angular.z, -self.max_angular_z, self.max_angular_z)
     
     def _select_gait_type(self, velocity_magnitude):
-        """Select gait type based on velocity"""
-        # Simple gait selection logic
-        if velocity_magnitude < 0.05:
-            return 0  # Tripod for standing/slow
-        elif velocity_magnitude < 0.15:
-            return 2  # Ripple for medium speed
-        else:
-            return 0  # Tripod for fast
+        """Select gait type - always return tripod (type 0)"""
+        return 0  # Tripod only
     
     def _filter_velocity(self, alpha=0.3):
         """Apply exponential smoothing to velocity commands"""
@@ -153,7 +149,7 @@ class GaitPlanner(Node):
         return np.array(waypoints)
     
     def _get_leg_phase_offset(self, leg_id, gait_type):
-        """Calculate phase offset for each leg based on gait pattern"""
+        """Calculate phase offset for each leg - Tripod only"""
         # Leg arrangement (hexagon - clockwise from right):
         #        leg3
         #   leg4    leg2
@@ -161,25 +157,13 @@ class GaitPlanner(Node):
         #   leg5    leg1
         #        leg6
         
-        if gait_type == 0:  # Tripod gait
-            # Group 1 (phase 0.0): Legs 1, 3, 5 (alternating pattern)
-            # Group 2 (phase 0.5): Legs 2, 4, 6 (alternating pattern)
-            if leg_id in [1, 3, 5]:
-                return 0.0
-            else:
-                return 0.5
-        
-        elif gait_type == 1:  # Wave gait
-            # Sequential: each leg offset by 1/6
-            phase_offsets = [0.0, 0.5, 1/6, 4/6, 2/6, 5/6]
-            return phase_offsets[leg_id - 1]
-        
-        elif gait_type == 2:  # Ripple gait
-            # Three groups of two legs
-            phase_offsets = [0.0, 2/3, 1/3, 0.0, 2/3, 1/3]
-            return phase_offsets[leg_id - 1]
-        
-        return 0.0
+        # Tripod gait only
+        # Group 1 (phase 0.0): Legs 1, 3, 5 (alternating pattern)
+        # Group 2 (phase 0.5): Legs 2, 4, 6 (alternating pattern)
+        if leg_id in [1, 3, 5]:
+            return 0.0
+        else:
+            return 0.5
     
     def publish_gait(self):
         """OUTPUT: Publish gait parameters and body velocity - 10 Hz"""
