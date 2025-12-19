@@ -27,24 +27,15 @@ A hierarchical control system for a 6-legged hexapod robot implementing **tripod
 
 ---
 
-## 🔄 Data Flow
+## 🔄 Control System Diagram
 
-```
-User Input (/cmd_vel)
-    ↓
-[Gait Planner] (10 Hz)
-    ↓ gait_parameters, body_velocity
-[State Machine] (50 Hz)
-    ↓ phase_info (per leg)
-[Set Point Generator] (50 Hz)
-    ↓ end_effector_setpoint
-[Trajectory Generator] (100 Hz)
-    ↓ target + velocity
-    ├─→ [IK] ──→ joint_position_target ──→ [Position PID] ──┐
-    └─→ [IVK] ─→ velocity_feedforward ─────────────────────┤
-                                                            ↓
-                                            [Velocity PID] ──→ effort ──→ Gazebo
-```
+![Control Diagram](Hexapod_Control_Diagram.png)
+
+The diagram shows the complete control architecture with:
+- **Cascaded PID Control**: Position loop (outer) and velocity loop (inner)
+- **Feedforward Path**: Inverse Velocity Kinematic provides joint velocity setpoint
+- **Gravity Compensation**: Added to command torque
+- **Feedback Loops**: Forward Kinematic feedback to Gait Planning
 
 ---
 
