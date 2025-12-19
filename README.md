@@ -130,14 +130,25 @@ User Input (/cmd_vel)
 
 ## 🚀 Quick Start
 
-### 1. Build
+### Prerequisites
+- **ROS2** (Humble or later)
+- **Gazebo** (Harmonic recommended)
+- **Python 3** with numpy
+- **ROS2 packages**: `ros_gz_sim`, `ros_gz_bridge`, `controller_manager`, `effort_controllers`
+
+### 1. Clone Repository
 ```bash
-cd ~/Desktop/FRA333_Kinematic_Project
+git clone https://github.com/BhumipatNgamphueak/Hexapod.git
+cd Hexapod
+```
+
+### 2. Build
+```bash
 colcon build
 source install/setup.bash
 ```
 
-### 2. Launch Simulation
+### 3. Launch Simulation
 ```bash
 # Terminal 1: Start Gazebo simulation
 ros2 launch hexapod_simulation simulation-full.launch.py
@@ -151,7 +162,7 @@ source install/setup.bash
 ros2 topic pub /cmd_vel geometry_msgs/msg/Twist "{linear: {x: 0.05}}"
 ```
 
-### 3. Control
+### 4. Control
 ```bash
 # Forward
 ros2 topic pub /cmd_vel geometry_msgs/msg/Twist "{linear: {x: 0.1}}"
@@ -213,41 +224,158 @@ damping_factor = 0.05       # Higher = smoother, less oscillation
 ## 🗂️ Repository Structure
 
 ```
-FRA333_Kinematic_Project/
+kinematic_project_ws/
 ├── src/
-│   ├── hexapod/                    # Main control package
-│   │   ├── scripts/
-│   │   │   ├── gait_planning.py
-│   │   │   ├── state_controller.py
-│   │   │   ├── set_point.py
-│   │   │   ├── trajectory_planning.py
-│   │   │   ├── inverse_position_kinematic.py
-│   │   │   ├── inverse_velocity_kinematic.py
-│   │   │   ├── pid_position_controller.py
-│   │   │   ├── pid_velocity_controller.py
-│   │   │   ├── forward_position_kinematic.py
-│   │   │   ├── joint_state_splitter.py
-│   │   │   ├── fk_pdf_model.py         # PDF kinematic library
-│   │   │   └── data_logger.py          # Data logging utility
-│   │   └── launch/
-│   │       └── simple.launch.py        # Main control launch file
-│   ├── hexapod_description/        # Robot URDF/xacro
-│   │   └── robot/visual/
-│   │       ├── hexapod.xacro
-│   │       ├── gazebo_full.xacro
-│   │       └── hexapod_params.xacro
-│   └── hexapod_simulation/         # Gazebo simulation
-│       └── launch/
-│           └── simulation-full.launch.py
+│   ├── hexapod/                         # Main control package (228 KB)
+│   │   ├── scripts/                     # 11 Python control nodes
+│   │   │   ├── gait_planning.py         # Global: Gait pattern selection
+│   │   │   ├── state_controller.py      # Global: Phase management
+│   │   │   ├── joint_state_splitter.py  # Global: Joint state distribution
+│   │   │   ├── set_point.py             # Per-leg: Waypoint generation
+│   │   │   ├── trajectory_planning.py   # Per-leg: Cubic spline interpolation
+│   │   │   ├── inverse_position_kinematic.py  # Per-leg: IK solver
+│   │   │   ├── inverse_velocity_kinematic.py  # Per-leg: Jacobian-based IVK
+│   │   │   ├── pid_position_controller.py     # Per-leg: Position PID
+│   │   │   ├── pid_velocity_controller.py     # Per-leg: Velocity PID
+│   │   │   ├── forward_position_kinematic.py  # Per-leg: FK verification
+│   │   │   ├── fk_pdf_model.py          # PDF kinematic library (417 lines)
+│   │   │   └── data_logger.py           # Data logging utility
+│   │   ├── launch/
+│   │   │   └── simple.launch.py         # Main control launch file
+│   │   ├── config/
+│   │   │   └── hexapod_simplified_params.yaml
+│   │   ├── CMakeLists.txt
+│   │   └── package.xml
+│   │
+│   ├── hexapod_description/             # Robot model package (20 MB)
+│   │   ├── robot/visual/
+│   │   │   ├── hexapod.xacro            # Main robot definition
+│   │   │   ├── hexapod_params.xacro     # Robot parameters
+│   │   │   └── gazebo_full.xacro        # Gazebo plugins & controllers
+│   │   ├── meshes/                      # 6 STL mesh files (CAD models)
+│   │   ├── config/
+│   │   │   └── display.rviz
+│   │   ├── CMakeLists.txt
+│   │   └── package.xml
+│   │
+│   ├── hexapod_simulation/              # Simulation package (84 KB)
+│   │   ├── launch/
+│   │   │   └── simulation-full.launch.py  # Gazebo + RViz launcher
+│   │   ├── config/
+│   │   │   └── controller_full.yaml     # Effort controller config (100 Hz)
+│   │   ├── rviz/
+│   │   │   ├── display.rviz
+│   │   │   └── config.rviz
+│   │   ├── CMakeLists.txt
+│   │   └── package.xml
+│   │
+│   └── controller/                      # Alternative controllers (48 KB)
+│       ├── scripts/                     # Experimental/alternative implementations
+│       ├── CMakeLists.txt
+│       └── package.xml
+│
 ├── README.md
-└── rosgraph.png
+└── .git/                                # Git repository
+```
+
+---
+
+## 🔧 Technical Details
+
+### Kinematic Model
+- **Based on**: Canberk Suat Gurel's hexapod research paper
+- **Method**: Denavit-Hartenberg (DH) parameters
+- **Approach**: Analytical solutions for Forward/Inverse Kinematics
+- **URDF Compensation**: Automatic offset correction between PDF frame and URDF geometry
+- **Jacobian**: Numerical differentiation for velocity control
+- **Singularity Handling**: Damped least squares (damping factor: 0.05)
+
+### Robot Specifications
+- **Legs**: 6 (numbered 1-6)
+- **Joints per leg**: 3 (hip, knee, ankle)
+- **Total DOF**: 18
+- **Control Interface**: Effort (torque) control via `effort_controllers`
+
+### Software Stack
+- **Framework**: ROS2 (Robot Operating System 2)
+- **Simulation**: Gazebo Harmonic
+- **Bridge**: `ros_gz_bridge` for ROS2 ↔ Gazebo communication
+- **Visualization**: RViz2
+- **Programming**: Python 3 with NumPy
+- **Build System**: CMake + ament_cmake
+
+### Key Features
+✅ Hierarchical multi-rate control (10/50/100 Hz)
+✅ Cascaded PID control with feedforward
+✅ Gravity compensation
+✅ Multiple gait patterns (tripod/wave/ripple)
+✅ Synchronized 45-node distributed system
+✅ Real-time trajectory generation with cubic splines
+✅ Analytical IK with singularity avoidance
+
+---
+
+## 📦 Package Dependencies
+
+### ROS2 Packages (in package.xml)
+- `ament_cmake` / `ament_cmake_python` - Build tools
+- `rclcpp` / `rclpy` - ROS2 client libraries
+- `geometry_msgs` / `std_msgs` - Message types
+- `sensor_msgs` - Joint state messages
+- `rosidl_default_generators` - Custom message generation
+
+### Runtime Dependencies
+- `robot_state_publisher` - URDF/TF broadcasting
+- `ros_gz_sim` - Gazebo Harmonic integration
+- `ros_gz_bridge` - ROS2 ↔ Gazebo communication
+- `controller_manager` - Controller lifecycle
+- `joint_state_broadcaster` - Joint state publishing
+- `effort_controllers` - Torque control interface
+- `rviz2` - 3D visualization
+
+### Python Dependencies
+- `numpy` - Numerical computations
+- `rclpy` - ROS2 Python API
+
+---
+
+## 🐛 Troubleshooting
+
+### Robot doesn't move
+- **Wait 10 seconds** after launching Gazebo before starting control nodes
+- **Wait 4 seconds** after control nodes start before sending velocity commands
+- Check if all 45 nodes are running: `ros2 node list | wc -l`
+- Verify Gazebo controllers: `ros2 control list_controllers`
+
+### Robot falls or unstable
+- Reduce velocity: Use `x: 0.05` instead of `x: 0.1`
+- Lower step height in [gait_planning.py](src/hexapod/scripts/gait_planning.py)
+- Increase cycle time for slower, more stable gait
+- Check PID gains in position/velocity controllers
+
+### Build errors
+```bash
+# Clean and rebuild
+rm -rf build install log
+colcon build --symlink-install
+source install/setup.bash
+```
+
+### Missing dependencies
+```bash
+# Install ROS2 packages
+sudo apt install ros-humble-ros-gz ros-humble-controller-manager \
+  ros-humble-effort-controllers ros-humble-joint-state-broadcaster
+
+# Install Python packages
+pip install numpy
 ```
 
 ---
 
 ## 👥 Contributors
 
-- Development Team
+- Development Team (Prime, Athit)
 - Based on research: Canberk Suat Gurel
 
 ---
