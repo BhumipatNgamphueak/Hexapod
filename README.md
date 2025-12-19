@@ -375,7 +375,7 @@ pip install numpy
 
 ## 👥 Contributors
 
-- Development Team (Prime, Athit)
+- Development Team (Prime, Athit, Oat)
 - Based on research: Canberk Suat Gurel
 
 ---
