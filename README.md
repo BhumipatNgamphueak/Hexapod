@@ -1,9 +1,15 @@
 # Hexapod Robot Control System
 
 ## 🤖 Overview
-A complete hierarchical control system for a 6-legged hexapod robot with **ROS2** and **Gazebo** simulation.
+A hierarchical control system for a 6-legged hexapod robot implementing **tripod gait for straight-line walking** using **ROS2** and **Gazebo** simulation.
 
-**Status**: ✅ **Fully Functional** - Robot walks successfully with stable tripod gait
+**Scope**: This project focuses on tripod gait pattern with straight trajectory control only.
+
+**Status**:
+- ✅ Robot successfully moves with tripod gait and follows trajectory
+- ⚠️ **Known Issue**: Robot doesn't move perfectly straight due to **RTF (Real Time Factor)** problems
+  - Hardware limitations cause Gazebo feedback to not run in real-time
+  - Non-realtime feedback affects control loop synchronization
 
 ---
 
@@ -164,35 +170,33 @@ ros2 topic pub /cmd_vel geometry_msgs/msg/Twist "{linear: {x: 0.05}}"
 
 ### 4. Control
 ```bash
-# Forward
+# Forward (Straight-line motion - Primary functionality)
 ros2 topic pub /cmd_vel geometry_msgs/msg/Twist "{linear: {x: 0.1}}"
 
-# Turn left
-ros2 topic pub /cmd_vel geometry_msgs/msg/Twist "{angular: {z: 0.5}}"
+# Slower forward (Recommended for testing)
+ros2 topic pub /cmd_vel geometry_msgs/msg/Twist "{linear: {x: 0.05}}"
 
 # Stop
 ros2 topic pub /cmd_vel geometry_msgs/msg/Twist "{}"
 ```
 
+**Note**: This project implements straight-line walking only. Turning commands are not part of this implementation.
+
 ---
 
 ## 🎮 Gait Patterns
 
-### Tripod Gait (Default, gait_type=0)
+### Tripod Gait (Implemented - gait_type=0)
 - **Group 1**: Legs 1, 3, 5 (phase 0.0)
 - **Group 2**: Legs 2, 4, 6 (phase 0.5)
 - **Duty Factor**: 0.5
-- **Speed**: Fast, most stable
+- **Movement**: Straight-line trajectory only
+- **Status**: ✅ Functional - follows trajectory but may drift due to RTF issues
 
-### Wave Gait (gait_type=1)
-- Sequential leg lifting: 1→2→3→4→5→6
-- **Duty Factor**: 0.83
-- **Speed**: Slow, very stable
-
-### Ripple Gait (gait_type=2)
-- Three groups of paired legs
-- **Duty Factor**: 0.67
-- **Speed**: Medium
+### Other Gaits (Not Implemented)
+The codebase contains logic for wave and ripple gaits, but **this project focuses exclusively on tripod gait with straight-line motion**:
+- Wave Gait (gait_type=1) - Sequential leg lifting
+- Ripple Gait (gait_type=2) - Three groups of paired legs
 
 ---
 
@@ -346,6 +350,16 @@ kinematic_project_ws/
 - **Wait 4 seconds** after control nodes start before sending velocity commands
 - Check if all 45 nodes are running: `ros2 node list | wc -l`
 - Verify Gazebo controllers: `ros2 control list_controllers`
+
+### Robot doesn't move straight (Known Issue)
+- **Root Cause**: Real Time Factor (RTF) < 1.0 due to hardware limitations
+- **Symptom**: Robot follows trajectory but drifts laterally or rotates unintentionally
+- **Explanation**: When Gazebo runs slower than real-time, feedback delays cause control loop desynchronization
+- **Workarounds**:
+  - Use a more powerful computer to maintain RTF ≈ 1.0
+  - Reduce simulation complexity (disable shadows, reduce physics update rate)
+  - Lower control frequencies if RTF consistently < 0.5
+  - Accept minor drift as limitation of current hardware setup
 
 ### Robot falls or unstable
 - Reduce velocity: Use `x: 0.05` instead of `x: 0.1`
